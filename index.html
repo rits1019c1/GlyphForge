@@ -210,6 +210,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   </div>
 
   <div class="tgroup">
+    <button class="tbtn" onclick="openLoad()" title="作業データを読み込む (.txt)">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>読み込み
+    </button>
+    <input type="file" id="projectUpload" accept=".txt,application/json" style="display:none" onchange="doLoad(event)">
     <button class="tbtn" onclick="openSave()">
       <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>保存
     </button>
@@ -309,7 +313,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   <span id="pointCount">0 pt</span>
   <span id="glyphCountSt">0 グリフ</span>
   <span id="histStatus">履歴: 0</span>
-  <span style="margin-left:auto;opacity:.45">GlyphForge v1.0 — opentype.js</span>
+  <span style="margin-left:auto;opacity:.45">GlyphForge v1.1 — opentype.js</span>
 </div>
 
 <!-- TOAST -->
@@ -345,6 +349,47 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <button class="mbtn" onclick="closeModal('exportModal')">キャンセル</button>
       <button class="mbtn ok" onclick="doExport()">書き出し</button>
     </div>
+  </div>
+</div>
+
+<!-- LOAD MODAL -->
+<div class="modal-overlay" id="loadModal">
+  <div class="modal">
+    <div class="modal-title">プロジェクトを読み込む</div>
+    <div class="modal-body" id="loadModalBody">
+      GlyphForge の保存データ (.txt) または OTF/TTF フォントファイルを選択してください。<br>
+      <span style="color:#e0a070;font-size:11px">※ 現在の作業データは上書きされます。</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <button class="mbtn ok" onclick="document.getElementById('projectUpload').click()">
+        <span style="font-size:12px">📄 作業データ (.txt) を読み込む</span>
+      </button>
+      <button class="mbtn" style="border-color:var(--accent);color:var(--accent2)" onclick="document.getElementById('otfUpload').click()">
+        <span style="font-size:12px">🔤 OTF / TTF フォントを読み込む</span>
+      </button>
+      <input type="file" id="otfUpload" accept=".otf,.ttf" style="display:none" onchange="doLoadOTF(event)">
+    </div>
+    <div class="modal-actions"><button class="mbtn" onclick="closeModal('loadModal')">閉じる</button></div>
+  </div>
+</div>
+
+<!-- RADICAL EDIT MODAL -->
+<div class="modal-overlay" id="radicalEditModal">
+  <div class="modal" style="min-width:320px">
+    <div class="modal-title">部首を編集</div>
+    <div class="modal-body">部首「<span id="editRadicalLabel" style="color:var(--accent2);font-size:16px"></span>」のストローク操作</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <button class="mbtn" onclick="syncRadicalToInstances()">
+        <span style="font-size:12px">🔄 全グリフへ変更を同期</span>
+      </button>
+      <button class="mbtn" onclick="updateRadicalFromCurrent()">
+        <span style="font-size:12px">✏️ 現在のキャンバスで上書き登録</span>
+      </button>
+      <button class="mbtn danger" style="color:#e07070" onclick="deleteRadical()">
+        <span style="font-size:12px">🗑 この部首を削除</span>
+      </button>
+    </div>
+    <div class="modal-actions"><button class="mbtn" onclick="closeModal('radicalEditModal')">閉じる</button></div>
   </div>
 </div>
 
@@ -816,6 +861,9 @@ function updateImgOpacity() {
 }
 
 // ===== RADICALS =====
+// radicalInstances: {radicalLabel: [{glyphChar, offsetX, offsetY}]}
+let radicalInstances = {};
+
 function registerRadical() {
   const strokes = getData().strokes;
   if(!strokes.length){ showToast('先に描画してください'); return; }
@@ -826,14 +874,91 @@ function registerRadical() {
   showToast(`「${g.char}」を部首として登録しました`);
 }
 
+function renderRadicals() {
+  const list = document.getElementById('radicalsList');
+  list.innerHTML = '';
+  radicals.forEach((r,i) => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;display:flex;align-items:stretch';
+    const chip = document.createElement('div');
+    chip.className = 'rchip';
+    chip.style.flex = '1';
+    chip.title = r.name + (r.strokes?.length ? ` (${r.strokes.length}st)` : ' ※未登録');
+    chip.textContent = r.label;
+    chip.style.opacity = r.strokes?.length ? '1' : '0.4';
+    chip.onclick = () => quickPasteRadical(r);
+    const editBtn = document.createElement('div');
+    editBtn.style.cssText = 'background:var(--canvas);border:0.5px solid var(--border);border-radius:0 4px 4px 0;padding:2px 4px;cursor:pointer;display:flex;align-items:center;font-size:10px;color:var(--muted)';
+    editBtn.title = '部首を編集';
+    editBtn.textContent = '⚙';
+    editBtn.onclick = e => { e.stopPropagation(); openRadicalEdit(i); };
+    wrap.appendChild(chip); wrap.appendChild(editBtn);
+    list.appendChild(wrap);
+  });
+}
+
+let editingRadicalIdx = -1;
+function openRadicalEdit(i) {
+  editingRadicalIdx = i;
+  document.getElementById('editRadicalLabel').textContent = radicals[i].label + ' (' + radicals[i].name + ')';
+  document.getElementById('radicalEditModal').classList.add('open');
+}
+
+function updateRadicalFromCurrent() {
+  if(editingRadicalIdx < 0) return;
+  const strokes = getData().strokes;
+  if(!strokes.length){ showToast('先に描画してください'); return; }
+  radicals[editingRadicalIdx].strokes = JSON.parse(JSON.stringify(strokes));
+  closeModal('radicalEditModal');
+  renderRadicals();
+  showToast(`「${radicals[editingRadicalIdx].label}」を更新しました`);
+}
+
+function syncRadicalToInstances() {
+  if(editingRadicalIdx < 0) return;
+  const r = radicals[editingRadicalIdx];
+  if(!r.strokes?.length){ showToast('部首のストロークデータがありません'); return; }
+  const instances = radicalInstances[r.label] || [];
+  if(!instances.length){ showToast('配置済みのインスタンスがありません'); return; }
+  let syncCount = 0;
+  for(const inst of instances) {
+    const d = glyphData[inst.glyphChar];
+    if(!d) continue;
+    // remove old instance strokes (tagged), add new ones
+    d.strokes = d.strokes.filter(s => s._radicalLabel !== r.label);
+    const newStrokes = r.strokes.map(s => ({
+      ...s,
+      _radicalLabel: r.label,
+      points: s.points.map(p => ({x: p.x + inst.offsetX, y: p.y + inst.offsetY}))
+    }));
+    d.strokes.push(...newStrokes);
+    syncCount++;
+  }
+  closeModal('radicalEditModal');
+  redraw();
+  showToast(`「${r.label}」を ${syncCount} グリフへ同期しました`);
+}
+
+function deleteRadical() {
+  if(editingRadicalIdx < 0) return;
+  const r = radicals[editingRadicalIdx];
+  radicals.splice(editingRadicalIdx, 1);
+  delete radicalInstances[r.label];
+  editingRadicalIdx = -1;
+  closeModal('radicalEditModal');
+  renderRadicals();
+  showToast(`「${r.label}」を削除しました`);
+}
+
 function pasteRadical() {
   if(!radicals.length){ showToast('部首が登録されていません'); return; }
   const list=document.getElementById('radicalModalList');
   list.innerHTML='';
   radicals.forEach(r=>{
     const d=document.createElement('div');
-    d.className='rchip'; d.title=r.name; d.textContent=r.label;
+    d.className='rchip'; d.title=r.name + (r.strokes?.length?'':' ※未登録'); d.textContent=r.label;
     d.style.cssText='font-size:20px;padding:8px;cursor:pointer';
+    d.style.opacity = r.strokes?.length ? '1' : '0.4';
     d.onclick=()=>{ quickPasteRadical(r); closeModal('radicalModal'); };
     list.appendChild(d);
   });
@@ -845,14 +970,167 @@ function quickPasteRadical(r) {
     showToast(`「${r.label}」のベクターデータが未登録です`);return;
   }
   const offset={x:20,y:20};
-  const copies=r.strokes.map(s=>({...s, points:s.points.map(p=>({x:p.x+offset.x,y:p.y+offset.y}))}));
+  const copies=r.strokes.map(s=>({
+    ...s,
+    _radicalLabel: r.label,
+    points:s.points.map(p=>({x:p.x+offset.x,y:p.y+offset.y}))
+  }));
   pushHistory();
   getData().strokes.push(...copies);
+  // track instance
+  const ch = glyphs[currentIdx].char;
+  if(!radicalInstances[r.label]) radicalInstances[r.label]=[];
+  if(!radicalInstances[r.label].find(i=>i.glyphChar===ch))
+    radicalInstances[r.label].push({glyphChar:ch, offsetX:offset.x, offsetY:offset.y});
   redraw(); updateAnchorList();
   showToast(`「${r.label}」を挿入しました`);
 }
 
-// ===== SAVE =====
+// ===== LOAD PROJECT (.txt) =====
+function openLoad() { document.getElementById('loadModal').classList.add('open'); }
+
+function doLoad(e) {
+  closeModal('loadModal');
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if(!data.glyphs || !data.glyphData) throw new Error('不正なフォーマットです');
+      glyphs = data.glyphs;
+      radicals = data.radicals || radicals;
+      glyphData = data.glyphData;
+      history = {}; histIdx = {};
+      // metrics
+      if(data.metrics){
+        document.getElementById('glyphWidth').value = data.metrics.advanceWidth || 600;
+        document.getElementById('glyphLsb').value = data.metrics.lsb || 50;
+        document.getElementById('glyphRsb').value = data.metrics.rsb || 50;
+        document.getElementById('ascender').value = data.metrics.ascender || 800;
+        document.getElementById('descender').value = data.metrics.descender || -200;
+      }
+      renderGlyphList();
+      renderRadicals();
+      selectGlyph(0);
+      document.getElementById('fontNameSave').value = data.fontName || 'MyFont';
+      document.getElementById('fontNameExport').value = data.fontName || 'MyFont';
+      showToast(`「${data.fontName}」を読み込みました (${glyphs.length} グリフ)`);
+    } catch(err) {
+      showToast('読み込みエラー: ' + err.message);
+    }
+    e.target.value = '';
+  };
+  r.readAsText(f);
+}
+
+// ===== LOAD OTF/TTF =====
+async function doLoadOTF(e) {
+  closeModal('loadModal');
+  const f = e.target.files[0]; if(!f) return;
+  const prog = document.getElementById('progress');
+  const pbar = document.getElementById('pbar');
+  const pmsg = document.getElementById('progressMsg');
+  prog.classList.add('open');
+  pmsg.textContent = 'フォントを解析中...'; pbar.style.width = '10%';
+  try {
+    const buf = await f.arrayBuffer();
+    pbar.style.width = '30%'; await sleep(60);
+    const font = opentype.parse(buf);
+    pbar.style.width = '50%'; await sleep(60);
+    const upm = font.unitsPerEm || 1000;
+    const scale = CS / upm;
+    const imported = [];
+    const importedData = {};
+    const glyphCount = font.glyphs.length;
+    let processed = 0;
+    for(let i = 0; i < glyphCount; i++) {
+      const og = font.glyphs.get(i);
+      if(!og.unicode) { processed++; continue; }
+      const ch = String.fromCodePoint(og.unicode);
+      const cp = og.unicode;
+      const name = og.name || (cp > 0x2E7F ? `CJK: ${ch}` : `U+${cp.toString(16).toUpperCase().padStart(4,'0')}`);
+      // convert path commands to strokes
+      const strokes = otfPathToStrokes(og.path, scale, upm);
+      imported.push({char: ch, name});
+      importedData[ch] = {strokes};
+      processed++;
+      if(processed % 20 === 0) {
+        pbar.style.width = Math.round(50 + processed/glyphCount*40) + '%';
+        pmsg.textContent = `変換中: ${processed}/${glyphCount}`;
+        await sleep(10);
+      }
+    }
+    // merge or replace
+    const existChars = new Set(glyphs.map(g=>g.char));
+    let added = 0;
+    for(const g of imported) {
+      if(!existChars.has(g.char)) { glyphs.push(g); added++; }
+      glyphData[g.char] = importedData[g.char];
+    }
+    history = {}; histIdx = {};
+    // font metrics
+    document.getElementById('ascender').value = font.tables?.os2?.sTypoAscender || font.ascender || 800;
+    document.getElementById('descender').value = font.tables?.os2?.sTypoDescender || font.descender || -200;
+    pbar.style.width = '100%'; await sleep(80);
+    prog.classList.remove('open');
+    renderGlyphList(); renderRadicals(); selectGlyph(0);
+    showToast(`「${font.names?.fullName?.en || f.name}」を読み込みました (${imported.length} グリフ、${added} 件追加)`);
+  } catch(err) {
+    prog.classList.remove('open');
+    showToast('OTF読み込みエラー: ' + err.message);
+    console.error(err);
+  }
+  e.target.value = '';
+}
+
+function otfPathToStrokes(path, scale, upm) {
+  if(!path || !path.commands || !path.commands.length) return [];
+  const strokes = [];
+  let currentPath = [];
+  let cx = 0, cy = 0;
+  const flip = p => ({x: p.x * scale, y: CS - p.y * scale});
+  for(const cmd of path.commands) {
+    if(cmd.type === 'M') {
+      if(currentPath.length > 1) strokes.push({type:'free', color:'#e8e6f0', width:3, points:[...currentPath]});
+      currentPath = [];
+      cx = cmd.x; cy = cmd.y;
+      currentPath.push(flip({x:cx, y:cy}));
+    } else if(cmd.type === 'L') {
+      cx = cmd.x; cy = cmd.y;
+      currentPath.push(flip({x:cx, y:cy}));
+    } else if(cmd.type === 'Q') {
+      // quadratic bezier: flush current path first, then add as curve
+      if(currentPath.length > 1) strokes.push({type:'free', color:'#e8e6f0', width:3, points:[...currentPath]});
+      const p0 = flip({x:cx, y:cy});
+      const p1 = flip({x:cmd.x1, y:cmd.y1});
+      const p2 = flip({x:cmd.x, y:cmd.y});
+      strokes.push({type:'curve', color:'#e8e6f0', width:3, points:[p0,p1,p2]});
+      currentPath = [flip({x:cmd.x, y:cmd.y})];
+      cx = cmd.x; cy = cmd.y;
+    } else if(cmd.type === 'C') {
+      if(currentPath.length > 1) strokes.push({type:'free', color:'#e8e6f0', width:3, points:[...currentPath]});
+      // approximate cubic as quadratic midpoint
+      const p0 = flip({x:cx, y:cy});
+      const midCx = (cmd.x1 + cmd.x2) / 2;
+      const midCy = (cmd.y1 + cmd.y2) / 2;
+      const p1 = flip({x:midCx, y:midCy});
+      const p2 = flip({x:cmd.x, y:cmd.y});
+      strokes.push({type:'curve', color:'#e8e6f0', width:3, points:[p0,p1,p2]});
+      currentPath = [flip({x:cmd.x, y:cmd.y})];
+      cx = cmd.x; cy = cmd.y;
+    } else if(cmd.type === 'Z') {
+      if(currentPath.length > 1) {
+        currentPath.push({...currentPath[0]});
+        strokes.push({type:'free', color:'#e8e6f0', width:3, points:[...currentPath]});
+      }
+      currentPath = [];
+    }
+  }
+  if(currentPath.length > 1) strokes.push({type:'free', color:'#e8e6f0', width:3, points:[...currentPath]});
+  return strokes;
+}
+
+
 function openSave() { document.getElementById('saveModal').classList.add('open'); }
 function doSave() {
   const name=document.getElementById('fontNameSave').value||'MyFont';
@@ -860,7 +1138,17 @@ function doSave() {
   const pad=n=>String(n).padStart(2,'0');
   const ts=`${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   const fname=`${name}_${ts}.txt`;
-  const payload=JSON.stringify({fontName:name,glyphs,radicals,glyphData,savedAt:new Date().toISOString()},null,2);
+  const payload=JSON.stringify({
+    fontName:name, glyphs, radicals, glyphData,
+    metrics:{
+      advanceWidth: parseInt(document.getElementById('glyphWidth').value)||600,
+      lsb: parseInt(document.getElementById('glyphLsb').value)||50,
+      rsb: parseInt(document.getElementById('glyphRsb').value)||50,
+      ascender: parseInt(document.getElementById('ascender').value)||800,
+      descender: parseInt(document.getElementById('descender').value)||-200,
+    },
+    savedAt:new Date().toISOString()
+  },null,2);
   download(new Blob([payload],{type:'text/plain'}),fname);
   closeModal('saveModal');
   showToast(`保存: ${fname}`);
