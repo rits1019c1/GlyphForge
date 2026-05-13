@@ -371,8 +371,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="ptitle">下絵設定</div>
       <div class="prow"><span>透過度</span><input class="pinput" id="imgOpacity" type="number" value="30" min="5" max="90" step="5"></div>
       <button class="tbtn" style="font-size:10px;margin-top:4px" onclick="removeImg()">
-        <svg viewBox="0 0 24 24" style="width:12px;height:12px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>下絵を削除
+        <svg viewBox="0 0 24 24" style="width:12px;height:12px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>画像下絵を削除
       </button>
+      <div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)">
+        <div class="ptitle" style="margin-bottom:4px">OTF下絵 (トレース用)</div>
+        <div id="traceInfo" style="font-size:10px;color:var(--muted);margin-bottom:5px">—</div>
+        <button class="tbtn" style="font-size:10px;width:100%;justify-content:center" onclick="clearTraceCurrentGlyph()">
+          <svg viewBox="0 0 24 24" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>このグリフの下絵を消去
+        </button>
+        <button class="tbtn" style="font-size:10px;width:100%;justify-content:center;margin-top:3px;color:#e07070" onclick="clearTraceAllGlyphs()">
+          <svg viewBox="0 0 24 24" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>全グリフの下絵を消去
+        </button>
+      </div>
     </div>
     <div class="psec">
       <div class="ptitle">ショートカット</div>
@@ -834,6 +844,7 @@ function selectGlyph(i) {
   redraw();
   updateAnchorList();
   updateUndoRedo();
+  updateTraceInfo();
 }
 
 function addGlyph() {
@@ -975,10 +986,12 @@ function drawGrid() {
 
 function drawStroke(s, selected=false) {
   ctx.save();
-  if(selected){ctx.shadowColor=s.color||'#e8e6f0';ctx.shadowBlur=8;}
-  ctx.strokeStyle = s.color||'#e8e6f0';
-  ctx.lineWidth = s.width||3;
+  const isTrace = !!s._trace;
+  if(selected && !isTrace){ ctx.shadowColor=s.color||'#e8e6f0'; ctx.shadowBlur=8; }
+  ctx.strokeStyle = s.color || '#e8e6f0';
+  ctx.lineWidth   = s.width || 3;
   ctx.lineCap='round'; ctx.lineJoin='round';
+  if(isTrace){ ctx.setLineDash([4,3]); ctx.globalAlpha=0.7; }
   if(s.type==='line' && s.points.length>=2){
     ctx.beginPath();ctx.moveTo(s.points[0].x,s.points[0].y);ctx.lineTo(s.points[1].x,s.points[1].y);ctx.stroke();
     dot(s.points[0].x,s.points[0].y,'#a594ff');dot(s.points[1].x,s.points[1].y,'#a594ff');
@@ -1344,7 +1357,38 @@ function quickPasteRadical(r) {
   showToast(`「${r.label}」を挿入しました`);
 }
 
-// ===== LOAD PROJECT (.txt) =====
+function clearTraceCurrentGlyph() {
+  const d = getData();
+  const before = d.strokes.length;
+  d.strokes = d.strokes.filter(s => !s._trace);
+  if(d.strokes.length < before) { pushHistory(); redraw(); updateTraceInfo(); showToast('このグリフの下絵を消去しました'); scheduleAutoSave(); }
+  else showToast('下絵がありません');
+}
+
+function clearTraceAllGlyphs() {
+  if(!confirm('全グリフのOTF下絵を消去しますか？')) return;
+  let count = 0;
+  glyphs.forEach(g => {
+    const d = glyphData[g.char];
+    if(!d) return;
+    const before = d.strokes.length;
+    d.strokes = d.strokes.filter(s => !s._trace);
+    if(d.strokes.length < before) count++;
+  });
+  redraw(); updateTraceInfo(); scheduleAutoSave();
+  showToast(`${count} グリフの下絵を消去しました`);
+}
+
+function updateTraceInfo() {
+  const d = getData();
+  const traceCount = d.strokes.filter(s => s._trace).length;
+  const el = document.getElementById('traceInfo');
+  if(!el) return;
+  el.textContent = traceCount > 0 ? `OTF下絵: ${traceCount} ストローク (水色点線)` : '下絵なし';
+  el.style.color = traceCount > 0 ? 'rgba(120,180,255,0.8)' : 'var(--muted)';
+}
+
+
 function openLoad() { document.getElementById('loadModal').classList.add('open'); }
 
 function doLoad(e) {
@@ -1419,12 +1463,20 @@ async function doLoadOTF(e) {
         await sleep(10);
       }
     }
-    // merge or replace
+    // merge or replace — 既存グリフは元のストロークを保持しつつ、OTFパスを下絵(_trace)として追加
     const existChars = new Set(glyphs.map(g=>g.char));
     let added = 0;
     for(const g of imported) {
       if(!existChars.has(g.char)) { glyphs.push(g); added++; }
-      glyphData[g.char] = importedData[g.char];
+      const traceStrokes = importedData[g.char].strokes.map(s=>({...s, _trace:true, color:'rgba(120,180,255,0.45)', width:1.5}));
+      if(!glyphData[g.char]) {
+        // 新規グリフ: 下絵だけ
+        glyphData[g.char] = { strokes: traceStrokes };
+      } else {
+        // 既存グリフ: 古い下絵を消して新しい下絵を追加（手書きストロークは保持）
+        const kept = glyphData[g.char].strokes.filter(s=>!s._trace);
+        glyphData[g.char] = { strokes: [...traceStrokes, ...kept] };
+      }
     }
     history = {}; histIdx = {};
     // font metrics
@@ -1606,26 +1658,38 @@ const TEST_BG_SWATCHES = ['#111118','#1e1e28','#ffffff','#f5f5f0','#2a2040','#1a
 let testFontUrl = null;
 let testFontLoaded = false;
 
-function openTestMode() {
-  buildTestMode();
+// テストモード用のフォントファミリーをCSSで一括適用
+function applyTestFont() {
+  let s = document.getElementById('gf-test-style');
+  if(!s){ s=document.createElement('style'); s.id='gf-test-style'; document.head.appendChild(s); }
+  const fb = document.getElementById('testFallback')?.value || "'Noto Sans JP'";
+  s.textContent = `
+    .test-line, .tw-text, .pair-item, .test-ruler-glyph {
+      font-family: 'GlyphForgePreview', ${fb}, sans-serif !important;
+    }
+  `;
+}
+
+async function openTestMode() {
   document.getElementById('testOverlay').classList.add('open');
   document.getElementById('btnTestMode').classList.add('active');
-  // Tキーでも閉じる
-}
-
-function closeTestMode() {
-  document.getElementById('testOverlay').classList.remove('open');
-  document.getElementById('btnTestMode').classList.remove('active');
-}
-
-async function buildTestMode() {
+  // まずUIを描画してからフォント生成
   buildBgSwatches();
   renderTestRuler();
   renderWaterfall();
   renderPairGrid();
   updateTestSize();
-  // グリフをCanvasからSVG経由でfont-faceを疑似構築
+  showToast('プレビューフォントを生成中...');
   await buildPreviewFont();
+  // フォント生成後に再描画して反映
+  renderTestRuler();
+  renderWaterfall();
+  renderPairGrid();
+}
+
+function closeTestMode() {
+  document.getElementById('testOverlay').classList.remove('open');
+  document.getElementById('btnTestMode').classList.remove('active');
 }
 
 function buildBgSwatches() {
@@ -1721,8 +1785,7 @@ function updateCustomText() {
 }
 
 function updateTestFallback() {
-  const fb = document.getElementById('testFallback').value;
-  document.getElementById('testContent').style.setProperty('--test-fallback', fb);
+  applyTestFont();
 }
 
 // Canvas → DataURL → CSS @font-face でプレビュー用フォントを疑似生成
@@ -1809,12 +1872,7 @@ async function buildPreviewFont() {
     // Font Loading API でロード完了を待つ
     await document.fonts.load(`48px 'GlyphForgePreview'`);
     testFontLoaded = true;
-
-    // 表示を強制再レンダリング
-    document.querySelectorAll('.test-line,.tw-text,.pair-item,.test-ruler-glyph').forEach(el=>{
-      el.style.fontFamily = "'GlyphForgePreview', 'Noto Sans JP', sans-serif";
-    });
-
+    applyTestFont();
     showToast('プレビューフォントを生成しました');
   } catch(e) {
     console.warn('buildPreviewFont failed:', e);
