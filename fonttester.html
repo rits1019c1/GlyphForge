@@ -8,148 +8,144 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/opentype.js/1.3.4/opentype.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         .font-preview-area {
-            min-height: 200px;
+            min-height: 250px;
             word-break: break-all;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            line-height: 1.4;
         }
-        /* カスタムスクロールバー */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
-        
         .drop-zone {
             border: 2px dashed #cbd5e1;
-            transition: border-color 0.3s, background-color 0.3s;
+            transition: all 0.3s ease;
         }
         .drop-zone.dragover {
             border-color: #3b82f6;
             background-color: #eff6ff;
+            transform: scale(1.02);
         }
+        /* スクロールバーのカスタマイズ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        #statusMessage.show { opacity: 1; transform: translateY(0); }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
 
-    <div class="max-w-5xl mx-auto px-4 py-8">
-        <header class="mb-10 text-center">
-            <h1 class="text-4xl font-800 tracking-tight text-slate-900 mb-2">OTF Font Previewer</h1>
-            <p class="text-slate-500">OTFファイルをアップロードして、Web上でタイピングテストと詳細情報の確認ができます。</p>
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <header class="mb-8">
+            <h1 class="text-3xl font-800 tracking-tight text-slate-900 mb-2">OTF Font Previewer</h1>
+            <p class="text-slate-500">フォントファイルをドロップして、タイピングテストや詳細確認ができます。</p>
         </header>
 
-        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Left Column: Controls & Info -->
-            <div class="lg:col-span-1 space-y-6">
-                <div id="dropZone" class="drop-zone bg-white rounded-2xl p-8 text-center cursor-pointer shadow-sm">
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left Sidebar: Controls (4 cols) -->
+            <div class="lg:col-span-4 space-y-6">
+                <!-- Drop Zone -->
+                <div id="dropZone" class="drop-zone bg-white rounded-2xl p-8 text-center cursor-pointer shadow-sm border-2">
                     <input type="file" id="fileInput" class="hidden" accept=".otf,.ttf,.woff,.woff2">
                     <div id="uploadPrompt">
-                        <div class="bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div class="bg-blue-50 text-blue-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                             </svg>
                         </div>
-                        <p class="font-semibold text-slate-700">フォントを選択</p>
-                        <p class="text-xs text-slate-400 mt-1">またはドラッグ＆ドロップ</p>
+                        <p class="font-bold text-slate-700">フォントをドロップ</p>
+                        <p class="text-sm text-slate-400 mt-1">またはクリックして選択</p>
                     </div>
                     <div id="fileInfo" class="hidden text-left">
-                        <p class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">読み込み済み</p>
-                        <p id="fileName" class="font-bold text-slate-800 truncate"></p>
-                        <button id="resetBtn" class="mt-4 text-xs text-red-500 hover:text-red-700 font-medium flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            別のフォントを読み込む
+                        <div class="flex items-center space-x-2 mb-2">
+                            <span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Loaded</span>
+                            <p id="fileName" class="font-bold text-slate-800 truncate flex-1"></p>
+                        </div>
+                        <button id="resetBtn" class="w-full mt-2 py-2 text-xs text-slate-500 hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors">
+                            別のファイルを読み込む
                         </button>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl p-6 shadow-sm space-y-4">
-                    <h3 class="font-bold text-slate-800 border-b pb-2 mb-4">表示設定</h3>
+                <!-- Appearance Controls -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm space-y-5 border border-slate-100">
+                    <h3 class="font-bold text-slate-800 flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        表示設定
+                    </h3>
                     
                     <div>
-                        <label class="block text-sm font-medium text-slate-600 mb-1">フォントサイズ (<span id="sizeVal">48</span>px)</label>
-                        <input type="range" id="fontSize" min="12" max="120" value="48" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        <div class="flex justify-between mb-1">
+                            <label class="text-xs font-bold text-slate-500">サイズ</label>
+                            <span class="text-xs font-mono text-blue-600" id="sizeVal">48px</span>
+                        </div>
+                        <input type="range" id="fontSize" min="12" max="160" value="48" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-slate-600 mb-1">文字の色</label>
-                        <div class="flex gap-2">
-                            <input type="color" id="fontColor" value="#0f172a" class="h-8 w-12 rounded border-none cursor-pointer">
-                            <input type="text" id="colorHex" value="#0F172A" class="flex-1 text-sm bg-slate-50 border rounded px-2 uppercase font-mono">
+                        <label class="text-xs font-bold text-slate-500 block mb-2">カラー</label>
+                        <div class="flex items-center space-x-3">
+                            <input type="color" id="fontColor" value="#1e293b" class="h-10 w-10 rounded-lg border-none cursor-pointer bg-transparent">
+                            <input type="text" id="colorHex" value="#1E293B" class="flex-1 text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 uppercase font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                         </div>
                     </div>
                 </div>
 
-                <div id="metadataPanel" class="bg-white rounded-2xl p-6 shadow-sm hidden">
-                    <h3 class="font-bold text-slate-800 border-b pb-2 mb-4">フォント詳細</h3>
-                    <div id="metadataContent" class="text-xs space-y-2 text-slate-600 font-mono">
-                        <!-- Data will be injected here -->
+                <!-- Font Metadata -->
+                <div id="metadataPanel" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hidden overflow-hidden">
+                    <h3 class="font-bold text-slate-800 mb-4 text-sm">フォント情報</h3>
+                    <div id="metadataContent" class="space-y-3">
+                        <!-- Content injected by JS -->
                     </div>
-                    <p class="mt-4 text-[10px] text-slate-400 leading-relaxed">※日本語フォントはファイルサイズが大きいため、解析に数秒かかる場合があります。</p>
                 </div>
             </div>
 
-            <!-- Right Column: Preview Area -->
-            <div class="lg:col-span-2 space-y-6">
-                <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
-                    <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
-                        <label class="text-sm font-bold text-slate-400 uppercase tracking-widest">Preview & Type Here</label>
-                        <div class="flex flex-wrap gap-2">
-                            <button onclick="setSample('pangram')" class="text-[11px] bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-full font-medium transition-colors">English</button>
-                            <button onclick="setSample('iroha')" class="text-[11px] bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full font-medium transition-colors">いろは歌</button>
-                            <button onclick="setSample('japanese')" class="text-[11px] bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full font-medium transition-colors">日本語混合</button>
-                            <button onclick="setSample('symbols')" class="text-[11px] bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full font-medium transition-colors">数字・記号</button>
+            <!-- Right Column: Editor & Preview (8 cols) -->
+            <div class="lg:col-span-8 space-y-6">
+                <!-- Main Preview Editor -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-50 bg-slate-50/50 flex flex-wrap items-center justify-between gap-4">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Type & Preview Area</span>
+                        <div class="flex gap-1.5">
+                            <button onclick="setSample('pangram')" class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 transition-all shadow-sm">English</button>
+                            <button onclick="setSample('japanese')" class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 transition-all shadow-sm">日本語</button>
+                            <button onclick="setSample('numbers')" class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 transition-all shadow-sm">数字・記号</button>
                         </div>
                     </div>
                     
-                    <div id="previewContainer" class="relative group border-2 border-transparent focus-within:border-blue-100 rounded-xl transition-all">
-                        <textarea id="sampleText" class="font-preview-area w-full border-none focus:ring-0 outline-none resize-none overflow-hidden p-2" rows="8" spellcheck="false" placeholder="ここに自由に文字を入力してください...">The quick brown fox jumps over the lazy dog.
-いろはにほへと ちりぬるを
-わかよたれそ つねならむ
-うゐのおくやま けふこえて
-あさきゆめみし ゑひもせす</textarea>
-                        <div id="emptyOverlay" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
-                            <p class="text-xl text-slate-300 italic">フォントを読み込むとここに反映されます</p>
-                        </div>
-                    </div>
-                    <p class="mt-4 text-xs text-slate-400">※上のエリアをクリックして、自由に文字を入力・編集できます。</p>
-                </div>
-            </div>
-
-            <!-- Right Column: Preview Area -->
-            <div class="lg:col-span-2 space-y-6">
-                <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
-                    <div class="flex justify-between items-center mb-4">
-                        <label class="text-sm font-bold text-slate-400 uppercase tracking-widest">Preview & Edit</label>
-                        <div class="flex space-x-2">
-                            <button onclick="setSample(1)" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded">Pangram</button>
-                            <button onclick="setSample(2)" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded">Alphabet</button>
-                            <button onclick="setSample(3)" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded">Numbers</button>
-                        </div>
-                    </div>
-                    
-                    <div id="previewContainer" class="relative group">
-                        <textarea id="sampleText" class="font-preview-area w-full border-none focus:ring-0 outline-none resize-none overflow-hidden" rows="5" spellcheck="false">The quick brown fox jumps over the lazy dog.
-THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG.
-あいうえお 漢字 テスト 1234567890</textarea>
-                        <div id="emptyOverlay" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
-                            <p class="text-xl text-slate-300 italic">フォントを読み込むとここに反映されます</p>
+                    <div class="relative p-6">
+                        <textarea id="sampleText" 
+                            class="font-preview-area w-full border-none focus:ring-0 outline-none resize-none p-0 bg-transparent" 
+                            placeholder="ここに文字を入力するか、フォントを読み込んでください..."
+                            spellcheck="false">The quick brown fox jumps over the lazy dog.
+いろはにほへと ちりぬるを わかよたれそ つねならむ
+0123456789 !@#$%^&*()</textarea>
+                        
+                        <div id="loadingOverlay" class="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center hidden z-10 rounded-2xl">
+                            <div class="animate-spin rounded-full h-10 w-10 border-4 border-blue-100 border-t-blue-600 mb-3"></div>
+                            <p class="text-sm font-bold text-slate-600">フォントを解析中...</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
-                    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">グリフ一覧 (Top 50)</h3>
-                    <div id="glyphGrid" class="flex flex-wrap gap-2 text-3xl">
-                        <!-- Glyphs will be injected here -->
+                <!-- Glyph Grid -->
+                <div id="glyphSection" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hidden">
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">収録グリフ (一部)</h3>
+                    <div id="glyphGrid" class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2 text-2xl">
+                        <!-- Glyphs injected by JS -->
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- UI Notification -->
+    <div id="statusMessage" class="fixed bottom-6 right-6 px-6 py-3 rounded-xl bg-slate-900 text-white text-sm font-medium shadow-2xl opacity-0 transition-all duration-300 transform translate-y-10 pointer-events-none z-50">
+        メッセージ
+    </div>
+
     <script>
+        // DOM Elements
         const fileInput = document.getElementById('fileInput');
         const dropZone = document.getElementById('dropZone');
         const sampleText = document.getElementById('sampleText');
@@ -157,173 +153,198 @@ THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG.
         const sizeVal = document.getElementById('sizeVal');
         const fontColor = document.getElementById('fontColor');
         const colorHex = document.getElementById('colorHex');
-        const emptyOverlay = document.getElementById('emptyOverlay');
         const metadataPanel = document.getElementById('metadataPanel');
         const metadataContent = document.getElementById('metadataContent');
         const glyphGrid = document.getElementById('glyphGrid');
-        const resetBtn = document.getElementById('resetBtn');
+        const glyphSection = document.getElementById('glyphSection');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const statusMessage = document.getElementById('statusMessage');
 
+        // State
         let currentFont = null;
-        let fontFace = null;
+        let fontFaceInstance = null;
 
-        // --- Event Listeners ---
+        /**
+         * 画面内通知を表示
+         */
+        function showNotification(msg, isError = false) {
+            statusMessage.textContent = msg;
+            statusMessage.className = `fixed bottom-6 right-6 px-6 py-3 rounded-xl text-white text-sm font-medium shadow-2xl transition-all duration-300 transform z-50 ${isError ? 'bg-red-500' : 'bg-slate-800'}`;
+            statusMessage.classList.add('show');
+            setTimeout(() => statusMessage.classList.remove('show'), 3000);
+        }
 
-        // Drag and Drop
-        dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
-        });
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            if (e.dataTransfer.files.length) {
-                handleFile(e.dataTransfer.files[0]);
-            }
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length) handleFile(e.target.files[0]);
-        });
-
-        // Controls
-        fontSize.addEventListener('input', (e) => {
-            sizeVal.textContent = e.target.value;
-            sampleText.style.fontSize = `${e.target.value}px`;
-        });
-
-        fontColor.addEventListener('input', (e) => {
-            const color = e.target.value;
-            colorHex.value = color.toUpperCase();
-            sampleText.style.color = color;
-        });
-
-        colorHex.addEventListener('input', (e) => {
-            sampleText.style.color = e.target.value;
-            fontColor.value = e.target.value;
-        });
-
-        resetBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            location.reload();
-        });
-
-        // --- Core Functions ---
-
+        /**
+         * フォントファイルの読み込みと反映
+         */
         async function handleFile(file) {
-            if (!file.name.match(/\.(otf|ttf|woff|woff2)$/i)) {
-                alert('OTF, TTF, WOFF, WOFF2 ファイル形式を選択してください。');
+            if (!file) return;
+            
+            const isFont = file.name.match(/\.(otf|ttf|woff|woff2)$/i);
+            if (!isFont) {
+                showNotification('対応していないファイル形式です (.otf, .ttf, .woff, .woff2)', true);
                 return;
             }
+
+            loadingOverlay.classList.remove('hidden');
 
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const arrayBuffer = e.target.result;
                 
                 try {
-                    // Parse font metadata using opentype.js
+                    // 1. opentype.jsで解析 (メタデータ用)
                     currentFont = opentype.parse(arrayBuffer);
                     
-                    // Register font for CSS usage
-                    const fontName = 'CustomFont_' + Date.now();
-                    fontFace = new FontFace(fontName, arrayBuffer);
+                    // 2. ブラウザのFontFace APIで読み込み (プレビュー表示用)
+                    const fontId = 'font_' + Date.now();
+                    const fontFace = new FontFace(fontId, arrayBuffer);
                     
                     const loadedFace = await fontFace.load();
                     document.fonts.add(loadedFace);
                     
-                    // Apply to UI
-                    applyFont(fontName, file.name);
+                    // UI更新
+                    applyFontToUI(fontId, file.name);
                     displayMetadata(currentFont);
-                    renderGlyphs(currentFont);
+                    renderGlyphs(currentFont, fontId);
+                    
+                    showNotification('フォントを読み込みました');
                 } catch (err) {
-                    console.error(err);
-                    alert('フォントの解析に失敗しました。ファイルが破損しているか、対応していない形式の可能性があります。');
+                    console.error('Font Load Error:', err);
+                    showNotification('フォントの解析に失敗しました', true);
+                } finally {
+                    loadingOverlay.classList.add('hidden');
                 }
             };
+            
+            reader.onerror = () => {
+                showNotification('ファイルの読み込み中にエラーが発生しました', true);
+                loadingOverlay.classList.add('hidden');
+            };
+
             reader.readAsArrayBuffer(file);
         }
 
-        function applyFont(fontName, fileName) {
-            sampleText.style.fontFamily = `"${fontName}", sans-serif`;
-            sampleText.style.fontSize = `${fontSize.value}px`;
-            sampleText.style.color = fontColor.value;
+        /**
+         * UIにフォントを適用
+         */
+        function applyFontToUI(fontId, fileName) {
+            sampleText.style.fontFamily = `"${fontId}", sans-serif`;
             
             document.getElementById('uploadPrompt').classList.add('hidden');
             document.getElementById('fileInfo').classList.remove('hidden');
             document.getElementById('fileName').textContent = fileName;
-            emptyOverlay.classList.add('hidden');
+            
             metadataPanel.classList.remove('hidden');
+            glyphSection.classList.remove('hidden');
         }
 
+        /**
+         * メタデータの表示
+         */
         function displayMetadata(font) {
             const names = font.names;
-            // 日本語名がある場合は日本語を、なければ英語を表示
-            const getFontName = (key) => {
-                return names[key]?.ja || names[key]?.en || '-';
-            };
+            // 日本語名がある場合は日本語、なければ英語
+            const getName = (id) => names[id]?.ja || names[id]?.en || '-';
 
-            const data = [
-                { label: 'フォント名', value: getFontName('fontFamily') },
-                { label: 'スタイル', value: getFontName('fontSubfamily') },
-                { label: 'バージョン', value: getFontName('version') },
-                { label: 'デザイナー', value: getFontName('designer') },
-                { label: '著作権', value: getFontName('copyright') },
-                { label: 'Units Per Em', value: font.unitsPerEm },
-                { label: 'グリフ数', value: font.numGlyphs }
+            const items = [
+                { label: 'フォント名', val: getName('fontFamily') },
+                { label: 'ウェイト', val: getName('fontSubfamily') },
+                { label: 'バージョン', val: getName('version') },
+                { label: '著作権', val: getName('copyright') },
+                { label: 'グリフ数', val: font.numGlyphs },
+                { label: 'Units Per Em', val: font.unitsPerEm }
             ];
 
-            metadataContent.innerHTML = data.map(item => `
-                <div class="flex justify-between gap-4 py-1.5 border-b border-slate-50 last:border-0">
-                    <span class="text-slate-400 shrink-0">${item.label}:</span>
-                    <span class="text-slate-700 text-right break-all font-sans">${item.value}</span>
+            metadataContent.innerHTML = items.map(item => `
+                <div class="border-b border-slate-50 pb-2 last:border-0">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-0.5">${item.label}</p>
+                    <p class="text-xs text-slate-700 font-medium break-all">${item.val}</p>
                 </div>
             `).join('');
         }
 
-        function renderGlyphs(font) {
+        /**
+         * グリフ一覧の描画
+         */
+        function renderGlyphs(font, fontId) {
             glyphGrid.innerHTML = '';
-            // 主要な日本語文字と英数字を含むサンプルを表示
-            const testChars = "あいうえおかきくけこアイウエオカキクケコABCDEFGHIJKLMN0123456789前後左右上下";
-            let shownCount = 0;
+            let count = 0;
+            const max = 80; // 表示上限
             
-            // フォント内のグリフからUnicodeを持っているものを探して表示
-            for(let i=0; i<font.glyphs.length && shownCount < 60; i++) {
+            // 収録されている最初の80文字を表示
+            for (let i = 0; i < font.glyphs.length && count < max; i++) {
                 const glyph = font.glyphs.get(i);
                 if (glyph.unicode) {
                     const char = String.fromCodePoint(glyph.unicode);
                     const div = document.createElement('div');
-                    div.className = 'w-12 h-12 flex items-center justify-center bg-slate-50 rounded hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-default border border-slate-100';
-                    div.style.fontFamily = sampleText.style.fontFamily;
+                    div.className = 'aspect-square flex items-center justify-center bg-slate-50 rounded-lg hover:bg-blue-50 transition-colors border border-slate-100 text-slate-800';
+                    div.style.fontFamily = `"${fontId}", sans-serif`;
                     div.textContent = char;
-                    div.title = `Unicode: U+${glyph.unicode.toString(16).toUpperCase()}`;
+                    div.title = `U+${glyph.unicode.toString(16).toUpperCase()}`;
                     glyphGrid.appendChild(div);
-                    shownCount++;
+                    count++;
                 }
             }
         }
 
-        window.setSample = function(type) {
-            let text = "";
-            switch(type) {
-                case 'pangram':
-                    text = "The quick brown fox jumps over the lazy dog.\nTHE QUICK BROWN FOX JUMPS OVER THE LAZY DOG.";
-                    break;
-                case 'iroha':
-                    text = "いろはにほへと ちりぬるを\nわかよたれそ つねならむ\nうゐのおくやま けふこえて\nあさきゆめみし ゑひもせす";
-                    break;
-                case 'japanese':
-                    text = "【日本語テスト】\n東の窓から射し込む光が、静かな部屋を照らしています。\n漢字：蒼穹、朦朧、薔薇、檸檬\nカタカナ：タイポグラフィ、プレビュー\n記号：！？（）｛｝［］";
-                    break;
-                case 'symbols':
-                    text = "0123456789\n!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~\n©®™￥€$£";
-                    break;
+        // --- STREAMING_CHUNK:Event Listeners Initialization... ---
+
+        // File Input
+        fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+        
+        // Drag & Drop
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        // Controls
+        fontSize.addEventListener('input', e => {
+            const val = e.target.value;
+            sizeVal.textContent = `${val}px`;
+            sampleText.style.fontSize = `${val}px`;
+        });
+
+        fontColor.addEventListener('input', e => {
+            const color = e.target.value;
+            colorHex.value = color.toUpperCase();
+            sampleText.style.color = color;
+        });
+
+        colorHex.addEventListener('input', e => {
+            const val = e.target.value;
+            if (/^#[0-9A-F]{6}$/i.test(val)) {
+                sampleText.style.color = val;
+                fontColor.value = val;
             }
-            sampleText.value = text;
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', e => {
+            e.stopPropagation();
+            window.location.reload();
+        });
+
+        // Sample Text
+        window.setSample = (type) => {
+            const texts = {
+                pangram: "The quick brown fox jumps over the lazy dog.\nTHE QUICK BROWN FOX JUMPS OVER THE LAZY DOG.",
+                japanese: "【日本語プレビュー】\n今朝、窓の外を見ると青空が広がっていました。\n漢字：薔薇 檸檬 綺麗 挨拶 魑魅魍魎\nひらがな・カタカナ：あいうえお アイウエオ\n（濁点・半濁点）：ぱぴぷぺぽ ばびぶべぼ",
+                numbers: "0123456789\n!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~\n¥ © ® ™ € £"
+            };
+            sampleText.value = texts[type] || "";
+            sampleText.focus();
         };
 
-        // Initialize UI values
-        sampleText.style.fontSize = `${fontSize.value}px`;
+        // Initialize display
+        sampleText.style.fontSize = fontSize.value + 'px';
         sampleText.style.color = fontColor.value;
 
     </script>
