@@ -824,19 +824,6 @@ function deleteGlyph(i) {
   showToast(`「${ch}」を削除しました`);
   scheduleAutoSave();
 }
-function renderRadicals() {
-  const list = document.getElementById('radicalsList');
-  list.innerHTML = '';
-  radicals.forEach((r,i) => {
-    const d = document.createElement('div');
-    d.className = 'rchip';
-    d.title = r.name;
-    d.textContent = r.label;
-    d.onclick = () => quickPasteRadical(r);
-    list.appendChild(d);
-  });
-}
-
 function selectGlyph(i) {
   currentIdx = i;
   const g = glyphs[i];
@@ -1603,7 +1590,8 @@ async function doExport() {
     pbar.style.width='100%';
     pmsg.textContent='ダウンロード中...';
     await sleep(100);
-    font.download(`${fontName}.otf`);
+    const buf = font.arrayBuffer();
+    download(new Blob([buf], {type:'font/otf'}), `${fontName}.otf`);
     prog.classList.remove('open');
     showToast(`「${fontName}.otf」を書き出しました (${otfGlyphs.length-1} グリフ)`);
   } catch(err) {
@@ -1738,7 +1726,6 @@ function updateTestFallback() {
 }
 
 // Canvas → DataURL → CSS @font-face でプレビュー用フォントを疑似生成
-// ※ opentype.js の font.download は Blob なので Font Loading API で読む
 async function buildPreviewFont() {
   try {
     const upm  = 1000;
@@ -1749,10 +1736,8 @@ async function buildPreviewFont() {
 
     // .notdef
     const notdefPath = new opentype.Path();
-    notdefPath.moveTo(50,0);  notdefPath.lineTo(450,0); notdefPath.lineTo(450,700);
+    notdefPath.moveTo(50,0); notdefPath.lineTo(450,0); notdefPath.lineTo(450,700);
     notdefPath.lineTo(50,700); notdefPath.closePath();
-    notdefPath.moveTo(100,50); notdefPath.lineTo(100,650); notdefPath.lineTo(400,650);
-    notdefPath.lineTo(400,50); notdefPath.closePath();
     const notdef = new opentype.Glyph({name:'.notdef', unicode:0, advanceWidth:500, path:notdefPath});
     const otfGlyphs = [notdef];
 
@@ -1785,7 +1770,8 @@ async function buildPreviewFont() {
         }
       });
 
-      if(!hasCmd){ path.moveTo(0,0); path.lineTo(0,0); }
+      // 空グリフにはダミーコマンドを入れてopentype.jsのバリデーションを通す
+      if(!hasCmd){ path.moveTo(0,0); }
 
       const safeName = 'g_' + g.char.codePointAt(0).toString(16);
       otfGlyphs.push(new opentype.Glyph({
@@ -1805,39 +1791,9 @@ async function buildPreviewFont() {
       glyphs:     otfGlyphs,
     });
 
-    // opentype.js v1.3.4 でブラウザから ArrayBuffer を得る:
-    // write() があればそれ、なければ createObjectURL フックで Blob を捕捉
-    let buf = null;
+    // opentype.js v1.3.4 の正しい API: font.arrayBuffer()
+    const buf = font.arrayBuffer();
 
-    if(typeof opentype.write === 'function') {
-      const result = opentype.write(font);
-      buf = result instanceof ArrayBuffer ? result : (result?.buffer ?? null);
-    }
-
-    if(!buf) {
-      buf = await new Promise((resolve, reject) => {
-        const orig = URL.createObjectURL.bind(URL);
-        let done = false;
-        URL.createObjectURL = (blob) => {
-          const url = orig(blob);
-          if(!done) {
-            done = true;
-            URL.createObjectURL = orig;
-            blob.arrayBuffer()
-              .then(ab => { setTimeout(()=>URL.revokeObjectURL(url), 200); resolve(ab); })
-              .catch(err => { URL.revokeObjectURL(url); reject(err); });
-          }
-          return url;
-        };
-        try { font.download('__gf_preview__'); }
-        catch(e) { URL.createObjectURL = orig; reject(e); }
-        setTimeout(() => { URL.createObjectURL = orig; if(!done) reject(new Error('timeout')); }, 4000);
-      });
-    }
-
-    if(!buf) throw new Error('フォントデータを生成できませんでした');
-
-    // Blob URL として @font-face に登録
     const blob = new Blob([buf], {type:'font/otf'});
     if(testFontUrl) URL.revokeObjectURL(testFontUrl);
     testFontUrl = URL.createObjectURL(blob);
@@ -1853,6 +1809,12 @@ async function buildPreviewFont() {
     // Font Loading API でロード完了を待つ
     await document.fonts.load(`48px 'GlyphForgePreview'`);
     testFontLoaded = true;
+
+    // 表示を強制再レンダリング
+    document.querySelectorAll('.test-line,.tw-text,.pair-item,.test-ruler-glyph').forEach(el=>{
+      el.style.fontFamily = "'GlyphForgePreview', 'Noto Sans JP', sans-serif";
+    });
+
     showToast('プレビューフォントを生成しました');
   } catch(e) {
     console.warn('buildPreviewFont failed:', e);
@@ -1863,6 +1825,8 @@ async function buildPreviewFont() {
 
 
 // ===== UTILS =====
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
 function download(blob, name) {
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download=name; a.click();
