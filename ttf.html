@@ -100,6 +100,7 @@
             <option value="ja_pangram_2">日本語: 鳥の歌（パングラム）</option>
             <option value="ja_sample_1">日本語: 夏目漱石『吾輩は猫である』</option>
             <option value="en_pangram_1" selected>英語: The quick brown fox jumps...</option>
+            <option value="random_test">テスト用文字列 (kfb me9apc...)</option>
             <option value="numbers_symbols">数字 &amp; 記号 (0-9, !@#$%...)</option>
             <option value="alphabet_upper">英大文字 (A - Z)</option>
             <option value="alphabet_lower">英小文字 (a - z)</option>
@@ -457,6 +458,7 @@
       ja_pangram_2: 'とりなくこえす ゆめ覚まし みよあけわたる ひんかしの そらあかねさし さひしきや やまとなでしこ さきにけり',
       ja_sample_1: '吾輩は猫である。名前はまだ無い。どこで生れたかとんと見当がつかぬ。何でも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。',
       en_pangram_1: 'The quick brown fox jumps over the lazy dog.',
+      random_test: 'kfb me9apc dv7goy3 5ihtz1 nq04l sx2w86 ujr',
       numbers_symbols: '0 1 2 3 4 5 6 7 8 9 ! @ # $ % ^ & * ( ) _ + - = { } [ ] < > ?',
       alphabet_upper: 'A B C D E F G H I J K L M N O P Q R S T U V W X Y Z',
       alphabet_lower: 'a b c d e f g h i j k l m n o p q r s t u v w x y z'
@@ -1207,13 +1209,50 @@
         btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> <span>生成中...</span>`;
         btn.disabled = true;
 
-        // Clone preview area to canvas without buttons
-        const element = document.getElementById('previewCard');
-        const canvas = await html2canvas(element, {
+        // Ensure all fonts are completely loaded
+        if (document.fonts) {
+          await document.fonts.ready;
+        }
+
+        const previewCardElement = document.getElementById('previewCard');
+        const originalWidth = previewCardElement.offsetWidth;
+
+        // Create an off-screen container for precise pixel rendering
+        const renderContainer = document.createElement('div');
+        renderContainer.style.position = 'absolute';
+        renderContainer.style.top = '-9999px';
+        renderContainer.style.left = '-9999px';
+        renderContainer.style.width = `${originalWidth}px`;
+        renderContainer.style.padding = '32px';
+        renderContainer.style.backgroundColor = state.bgColor;
+        renderContainer.style.color = state.textColor;
+        renderContainer.style.borderRadius = '16px';
+        renderContainer.style.boxSizing = 'border-box';
+
+        // Add text element with explicit font & spacing styles to avoid contenteditable rendering quirks
+        const textElement = document.createElement('div');
+        const activeFont = getActiveFont();
+        textElement.style.fontFamily = activeFont ? `'${activeFont.fontFamilyName}'` : 'sans-serif';
+        textElement.style.fontSize = `${state.fontSize}px`;
+        textElement.style.lineHeight = state.lineHeight;
+        textElement.style.letterSpacing = `${state.letterSpacing}px`;
+        textElement.style.textAlign = state.textAlign;
+        textElement.style.whiteSpace = 'pre-wrap';
+        textElement.style.wordBreak = 'break-word';
+        textElement.textContent = mainTextPreview.innerText;
+
+        renderContainer.appendChild(textElement);
+        document.body.appendChild(renderContainer);
+
+        const canvas = await html2canvas(renderContainer, {
           backgroundColor: state.bgColor,
           scale: 2, // High DPI capture
-          ignoreElements: (el) => el.id === 'copyPreviewImageBtn' || el.id === 'copyPreviewTextBtn'
+          useCORS: true,
+          logging: false
         });
+
+        // Clean up temporary DOM element
+        document.body.removeChild(renderContainer);
 
         canvas.toBlob(async (blob) => {
           if (!blob) {
