@@ -3,16 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TTF フォントプレビューツール</title>
+  <title>TTF Font Inspector</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- OpenType.js for Font Metadata & Glyph Parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/opentype.js/1.3.4/opentype.min.js"></script>
-  <!-- html2canvas for rasterizing element to image -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <!-- Google Fonts: Inter & Noto Sans JP for UI -->
+  <!-- Google Fonts for Default UI -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -21,7 +19,6 @@
     body {
       font-family: 'Inter', 'Noto Sans JP', sans-serif;
     }
-    /* Custom Scrollbars */
     ::-webkit-scrollbar {
       width: 8px;
       height: 8px;
@@ -43,7 +40,6 @@
 </head>
 <body class="h-full flex flex-col overflow-hidden bg-slate-950 text-slate-200">
 
-  <!-- Header -->
   <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-6 py-3.5 flex items-center justify-between shrink-0 z-20">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold text-xl shadow-inner">
@@ -58,7 +54,6 @@
       </div>
     </div>
 
-    <!-- Upload Button & File Input -->
     <div class="flex items-center gap-3">
       <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-lg shadow-indigo-600/20 flex items-center gap-2 active:scale-95">
         <i class="fa-solid fa-cloud-arrow-up"></i>
@@ -72,10 +67,8 @@
     </div>
   </header>
 
-  <!-- Main Container -->
   <div class="flex-1 flex overflow-hidden">
 
-    <!-- Sidebar / Control Panel -->
     <aside class="w-80 border-r border-slate-800 bg-slate-900 flex flex-col shrink-0 overflow-y-auto">
       
       <!-- Loaded Fonts List -->
@@ -85,7 +78,7 @@
           <span id="fontCountBadge" class="text-xs bg-slate-800 px-2 py-0.5 rounded-full text-slate-300">0</span>
         </div>
         <div id="fontListContainer" class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-          <!-- Dynamically populated font items -->
+          <!-- Dynamically populated -->
         </div>
       </div>
 
@@ -96,11 +89,11 @@
         <div>
           <label class="block text-xs text-slate-400 mb-1">プリセット選択</label>
           <select id="presetSelect" class="w-full bg-slate-950 border border-slate-700 rounded-lg text-xs p-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+            <option value="en_pangram_1">英語: The quick brown fox jumps...</option>
+            <option value="random_test">テスト用文字列 (kfb me9apc...)</option>
             <option value="ja_pangram_1">日本語: いろはにほへと（いろは歌）</option>
             <option value="ja_pangram_2">日本語: 鳥の歌（パングラム）</option>
             <option value="ja_sample_1">日本語: 夏目漱石『吾輩は猫である』</option>
-            <option value="en_pangram_1" selected>英語: The quick brown fox jumps...</option>
-            <option value="random_test">テスト用文字列 (kfb me9apc...)</option>
             <option value="numbers_symbols">数字 &amp; 記号 (0-9, !@#$%...)</option>
             <option value="alphabet_upper">英大文字 (A - Z)</option>
             <option value="alphabet_lower">英小文字 (a - z)</option>
@@ -113,11 +106,9 @@
         </div>
       </div>
 
-      <!-- Font Controls -->
       <div class="p-4 space-y-4">
         <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">スタイル設定</span>
 
-        <!-- Font Size Slider -->
         <div>
           <div class="flex justify-between text-xs mb-1">
             <span class="text-slate-300">文字サイズ</span>
@@ -126,7 +117,6 @@
           <input type="range" id="fontSizeSlider" min="12" max="144" value="32" class="w-full accent-indigo-500 cursor-pointer">
         </div>
 
-        <!-- Line Height Slider -->
         <div>
           <div class="flex justify-between text-xs mb-1">
             <span class="text-slate-300">行高 (Line Height)</span>
@@ -135,7 +125,6 @@
           <input type="range" id="lineHeightSlider" min="0.8" max="2.5" step="0.1" value="1.4" class="w-full accent-indigo-500 cursor-pointer">
         </div>
 
-        <!-- Letter Spacing Slider -->
         <div>
           <div class="flex justify-between text-xs mb-1">
             <span class="text-slate-300">字間 (Letter Spacing)</span>
@@ -144,7 +133,6 @@
           <input type="range" id="letterSpacingSlider" min="-5" max="20" step="0.5" value="0" class="w-full accent-indigo-500 cursor-pointer">
         </div>
 
-        <!-- Alignment -->
         <div>
           <label class="block text-xs text-slate-300 mb-1.5">揃え位置</label>
           <div class="grid grid-cols-4 gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
@@ -155,7 +143,6 @@
           </div>
         </div>
 
-        <!-- Colors & Theme -->
         <div class="space-y-2">
           <label class="block text-xs text-slate-300">表示モード &amp; カラー</label>
           <div class="grid grid-cols-3 gap-2">
@@ -182,15 +169,12 @@
         </div>
 
       </div>
-
     </aside>
 
-    <!-- Right Main Viewport -->
     <main class="flex-1 flex flex-col bg-slate-950 overflow-hidden">
       
-      <!-- View Navigation Tabs -->
       <div class="border-b border-slate-800 bg-slate-900/50 px-6 flex items-center justify-between shrink-0">
-        <div class="flex gap-1 -mb-px">
+        <div class="flex gap-1 -mb-px overflow-x-auto">
           <button data-tab="preview" class="tab-btn px-4 py-3 border-b-2 border-indigo-500 font-medium text-sm text-indigo-400 flex items-center gap-2">
             <i class="fa-solid fa-eye"></i> プレビュー
           </button>
@@ -216,10 +200,8 @@
         </div>
       </div>
 
-      <!-- Tab Contents Area -->
       <div id="tabContents" class="flex-1 overflow-y-auto relative p-6">
         
-        <!-- Drop Overlay Zone -->
         <div id="dragDropOverlay" class="hidden absolute inset-0 bg-indigo-950/90 border-4 border-dashed border-indigo-500 rounded-xl m-4 z-50 flex flex-col items-center justify-center text-center p-6 backdrop-blur-md transition-all">
           <i class="fa-solid fa-file-circle-plus text-6xl text-indigo-400 mb-4 animate-bounce"></i>
           <h2 class="text-2xl font-bold text-white mb-2">ここにフォントファイルをドロップ</h2>
@@ -229,13 +211,12 @@
         <!-- TAB 1: Main Editable Preview -->
         <div id="tab-preview" class="tab-content h-full flex flex-col">
           <div id="previewCard" class="flex-1 rounded-2xl border border-slate-800 p-8 flex flex-col justify-center overflow-auto transition-colors duration-200 shadow-inner relative" style="background-color: #020617; color: #f8fafc;">
-            <!-- Action Buttons for Preview -->
             <div class="absolute top-4 right-4 flex items-center gap-2 z-10">
-              <button id="copyPreviewImageBtn" class="bg-indigo-600/90 hover:bg-indigo-500 text-white border border-indigo-400/30 px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur transition-all flex items-center gap-1.5 shadow-md active:scale-95" title="プレビューをPNG画像としてクリップボードにコピー">
+              <button id="copyPreviewImageBtn" class="bg-indigo-600/90 hover:bg-indigo-500 text-white border border-indigo-400/30 px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur transition-all flex items-center gap-1.5 shadow-md active:scale-95">
                 <i class="fa-regular fa-image"></i>
                 <span>画像をコピー</span>
               </button>
-              <button id="copyPreviewTextBtn" class="bg-slate-800/80 hover:bg-slate-700/90 text-slate-300 hover:text-white border border-slate-700/60 px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur transition-all flex items-center gap-1.5 shadow-md active:scale-95" title="表示中のテキストをコピー">
+              <button id="copyPreviewTextBtn" class="bg-slate-800/80 hover:bg-slate-700/90 text-slate-300 hover:text-white border border-slate-700/60 px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur transition-all flex items-center gap-1.5 shadow-md active:scale-95">
                 <i class="fa-regular fa-copy"></i>
                 <span>テキストをコピー</span>
               </button>
@@ -250,19 +231,19 @@
           </div>
         </div>
 
-        <!-- TAB 2: Waterfall View -->
+        <!-- TAB 2: Waterfall -->
         <div id="tab-waterfall" class="tab-content hidden space-y-6">
           <div class="bg-slate-900 border border-slate-800 rounded-xl p-6">
             <h3 class="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
               <i class="fa-solid fa-text-height text-indigo-400"></i> サイズ別階層表示 (Waterfall)
             </h3>
             <div id="waterfallContainer" class="space-y-6 divide-y divide-slate-800/60">
-              <!-- Dynamically rendered sizes -->
+              <!-- Dynamically populated -->
             </div>
           </div>
         </div>
 
-        <!-- TAB 3: Glyph Grid View -->
+        <!-- TAB 3: Glyphs -->
         <div id="tab-glyphs" class="tab-content hidden space-y-4">
           <div class="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center bg-slate-900 p-4 rounded-xl border border-slate-800">
             <div class="relative flex-1 w-full">
@@ -275,14 +256,13 @@
           </div>
 
           <div id="glyphGrid" class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-16 gap-2">
-            <!-- Dynamically populated glyph boxes -->
+            <!-- Dynamically populated -->
           </div>
         </div>
 
-        <!-- TAB 4: Font Info & Metadata -->
+        <!-- TAB 4: Font Metadata -->
         <div id="tab-info" class="tab-content hidden space-y-6">
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Key Stats -->
             <div class="lg:col-span-1 space-y-4">
               <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl">
                 <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">基本スペック</h4>
@@ -310,9 +290,8 @@
                 </dl>
               </div>
 
-              <!-- Metrics -->
               <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl">
-                <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">メトリクス情報 (Metrics)</h4>
+                <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">メトリクス情報</h4>
                 <div class="grid grid-cols-2 gap-3 text-sm">
                   <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
                     <div class="text-xs text-slate-500">Units Per Em</div>
@@ -334,7 +313,6 @@
               </div>
             </div>
 
-            <!-- Full Naming Metadata Table -->
             <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5 overflow-x-auto">
               <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Name テーブル詳細</h4>
               <table class="w-full text-left text-xs border-collapse">
@@ -345,14 +323,14 @@
                   </tr>
                 </thead>
                 <tbody id="infoMetadataTable" class="divide-y divide-slate-800/60 text-slate-300">
-                  <!-- Dynamically populated metadata -->
+                  <!-- Dynamically populated -->
                 </tbody>
               </table>
             </div>
           </div>
         </div>
 
-        <!-- TAB 5: Font Comparison -->
+        <!-- TAB 5: Compare -->
         <div id="tab-compare" class="tab-content hidden space-y-4">
           <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
             <p class="text-xs text-slate-400">読み込まれているすべてのフォントで指定テキストを同時に表示比較します。</p>
@@ -361,7 +339,7 @@
             </button>
           </div>
           <div id="compareList" class="space-y-4">
-            <!-- Dynamically populated comparison rows -->
+            <!-- Dynamically populated -->
           </div>
         </div>
 
@@ -377,16 +355,9 @@
                 <span>コピー</span>
               </button>
             </div>
-            
             <pre class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-indigo-300 font-mono text-xs overflow-x-auto leading-relaxed" id="cssOutputCode">
 /* フォントを読み込むとCSSコードがここに生成されます */
             </pre>
-
-            <div class="mt-4 p-4 rounded-lg bg-indigo-950/40 border border-indigo-800/40 text-xs text-indigo-200 space-y-1">
-              <div class="font-semibold text-indigo-300"><i class="fa-solid fa-circle-info"></i> 使用方法:</div>
-              <p>1. 上記のCSSをプロジェクトのスタイルシートに貼り付けます。</p>
-              <p>2. フォントファイル（.ttf）をプロジェクトの `/fonts/` ディレクトリに配置してください。</p>
-            </div>
           </div>
         </div>
 
@@ -394,7 +365,7 @@
     </main>
   </div>
 
-  <!-- Glyph Detail Modal Popup -->
+  <!-- Glyph Detail Modal -->
   <div id="glyphModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 relative shadow-2xl space-y-4">
       <button id="closeGlyphModalBtn" class="absolute top-4 right-4 text-slate-400 hover:text-slate-100 text-lg w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-800">
@@ -426,7 +397,6 @@
         </div>
       </div>
 
-      <!-- Vector Preview Canvas -->
       <div>
         <label class="block text-xs text-slate-400 mb-1">ベクターパス描画 (OpenType Canvas)</label>
         <div class="bg-slate-950 rounded-xl p-2 border border-slate-800 flex justify-center">
@@ -439,8 +409,8 @@
   <script>
     // App State Management
     const state = {
-      fonts: [],            // List of font objects: { id, name, file, fontFace, openTypeFont, objectUrl }
-      activeFontId: null,   // Currently selected font ID
+      fonts: [],            // List of font objects: { id, name, fileName, fontFamilyName, fontFace, openTypeFont, fileSize }
+      activeFontId: null,   // Active font ID
       fontSize: 32,
       lineHeight: 1.4,
       letterSpacing: 0,
@@ -454,17 +424,17 @@
 
     // Text Presets Map
     const PRESETS = {
+      en_pangram_1: 'The quick brown fox jumps over the lazy dog.',
+      random_test: 'kfb me9apc dv7goy3 5ihtz1 nq04l sx2w86 ujr',
       ja_pangram_1: 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす',
       ja_pangram_2: 'とりなくこえす ゆめ覚まし みよあけわたる ひんかしの そらあかねさし さひしきや やまとなでしこ さきにけり',
       ja_sample_1: '吾輩は猫である。名前はまだ無い。どこで生れたかとんと見当がつかぬ。何でも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。',
-      en_pangram_1: 'The quick brown fox jumps over the lazy dog.',
-      random_test: 'kfb me9apc dv7goy3 5ihtz1 nq04l sx2w86 ujr',
       numbers_symbols: '0 1 2 3 4 5 6 7 8 9 ! @ # $ % ^ & * ( ) _ + - = { } [ ] < > ?',
       alphabet_upper: 'A B C D E F G H I J K L M N O P Q R S T U V W X Y Z',
       alphabet_lower: 'a b c d e f g h i j k l m n o p q r s t u v w x y z'
     };
 
-    // DOM Elements Cache
+    // DOM Cache
     const fontInput = document.getElementById('fontInput');
     const fontListContainer = document.getElementById('fontListContainer');
     const fontCountBadge = document.getElementById('fontCountBadge');
@@ -487,54 +457,31 @@
 
     const textColorPicker = document.getElementById('textColorPicker');
     const bgColorPicker = document.getElementById('bgColorPicker');
-    const themeLightBtn = document.getElementById('themeLightBtn');
-    const themeDarkBtn = document.getElementById('themeDarkBtn');
-    const themeInvertBtn = document.getElementById('themeInvertBtn');
 
-    /**
-     * Generate unique ID
-     */
-    function generateId() {
-      return 'font_' + Math.random().toString(36).substr(2, 9);
+    function init() {
+      setupEventListeners();
+      setupDragAndDrop();
+      updatePreviewTextFromPreset();
+      updatePreviewStyle();
+      renderDefaultSystemFont();
     }
 
-    /**
-     * Initialize Application & Event Listeners
-     */
-    function init() {
-      // Event Listeners for Uploads
-      fontInput.addEventListener('change', handleFileInput);
-      
-      // Drag and Drop support
-      window.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dragDropOverlay.classList.remove('hidden');
-      });
-      dragDropOverlay.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        dragDropOverlay.classList.add('hidden');
-      });
-      dragDropOverlay.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dragDropOverlay.classList.add('hidden');
-        if (e.dataTransfer.files.length > 0) {
-          processFiles(e.dataTransfer.files);
-        }
-      });
+    function setupEventListeners() {
+      // Font File Upload
+      fontInput.addEventListener('change', handleFileSelect);
+      resetDemoBtn.addEventListener('click', renderDefaultSystemFont);
 
-      // Controls Events
+      // Preset & Text Inputs
       presetSelect.addEventListener('change', (e) => {
         state.presetKey = e.target.value;
-        const text = PRESETS[state.presetKey] || '';
-        state.customText = text;
-        customTextInput.value = text;
-        updatePreviewText();
+        updatePreviewTextFromPreset();
       });
 
-      customTextInput.value = state.customText;
       customTextInput.addEventListener('input', (e) => {
         state.customText = e.target.value;
-        updatePreviewText();
+        mainTextPreview.innerText = state.customText;
+        updateCharCount();
+        renderActiveTab();
       });
 
       mainTextPreview.addEventListener('input', () => {
@@ -543,25 +490,26 @@
         updateCharCount();
       });
 
+      // Sliders
       fontSizeSlider.addEventListener('input', (e) => {
-        state.fontSize = parseInt(e.target.value, 10);
+        state.fontSize = parseInt(e.target.value);
         fontSizeValue.textContent = `${state.fontSize}px`;
-        applyStyles();
+        updatePreviewStyle();
       });
 
       lineHeightSlider.addEventListener('input', (e) => {
         state.lineHeight = parseFloat(e.target.value);
         lineHeightValue.textContent = state.lineHeight;
-        applyStyles();
+        updatePreviewStyle();
       });
 
       letterSpacingSlider.addEventListener('input', (e) => {
         state.letterSpacing = parseFloat(e.target.value);
         letterSpacingValue.textContent = `${state.letterSpacing}px`;
-        applyStyles();
+        updatePreviewStyle();
       });
 
-      // Align buttons
+      // Align Buttons
       document.querySelectorAll('.align-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.align-btn').forEach(b => {
@@ -570,179 +518,132 @@
           });
           btn.classList.add('bg-slate-800', 'text-slate-100');
           btn.classList.remove('text-slate-400');
-          state.textAlign = btn.dataset.align;
-          applyStyles();
+          state.textAlign = btn.getAttribute('data-align');
+          updatePreviewStyle();
         });
       });
 
-      // Colors & Themes
-      textColorPicker.addEventListener('input', (e) => {
-        state.textColor = e.target.value;
-        applyStyles();
-      });
-      bgColorPicker.addEventListener('input', (e) => {
-        state.bgColor = e.target.value;
-        applyStyles();
-      });
-
-      themeLightBtn.addEventListener('click', () => {
-        state.bgColor = '#ffffff';
+      // Themes & Colors
+      document.getElementById('themeLightBtn').addEventListener('click', () => {
+        state.bgColor = '#f8fafc';
         state.textColor = '#0f172a';
         bgColorPicker.value = state.bgColor;
         textColorPicker.value = state.textColor;
-        applyStyles();
+        updatePreviewStyle();
       });
 
-      themeDarkBtn.addEventListener('click', () => {
+      document.getElementById('themeDarkBtn').addEventListener('click', () => {
         state.bgColor = '#020617';
         state.textColor = '#f8fafc';
         bgColorPicker.value = state.bgColor;
         textColorPicker.value = state.textColor;
-        applyStyles();
+        updatePreviewStyle();
       });
 
-      themeInvertBtn.addEventListener('click', () => {
+      document.getElementById('themeInvertBtn').addEventListener('click', () => {
         const temp = state.bgColor;
         state.bgColor = state.textColor;
         state.textColor = temp;
         bgColorPicker.value = state.bgColor;
         textColorPicker.value = state.textColor;
-        applyStyles();
+        updatePreviewStyle();
       });
 
-      // Tab Switcher
+      textColorPicker.addEventListener('input', (e) => {
+        state.textColor = e.target.value;
+        updatePreviewStyle();
+      });
+
+      bgColorPicker.addEventListener('input', (e) => {
+        state.bgColor = e.target.value;
+        updatePreviewStyle();
+      });
+
+      // Tabs
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          switchTab(btn.dataset.tab);
+          const tab = btn.getAttribute('data-tab');
+          switchTab(tab);
         });
       });
 
-      // Reset Demo
-      resetDemoBtn.addEventListener('click', () => {
-        loadDefaultSystemFonts();
-      });
-
-      // Search Glyphs
-      document.getElementById('glyphSearchInput').addEventListener('input', filterGlyphs);
-
-      // Modal Close
-      document.getElementById('closeGlyphModalBtn').addEventListener('click', () => {
-        document.getElementById('glyphModal').classList.add('hidden');
-      });
-
-      // Copy Preview Image & Text
+      // Action Buttons
       document.getElementById('copyPreviewImageBtn').addEventListener('click', copyPreviewImageToClipboard);
       document.getElementById('copyPreviewTextBtn').addEventListener('click', copyPreviewTextToClipboard);
-
-      // Copy CSS
       document.getElementById('copyCssBtn').addEventListener('click', copyCssToClipboard);
-
-      // Compare Refresh
-      document.getElementById('compareRefreshBtn').addEventListener('click', renderCompareView);
-
-      // Initialize with default demo system font
-      loadDefaultSystemFonts();
+      document.getElementById('glyphSearchInput').addEventListener('input', (e) => {
+        renderGlyphs(e.target.value);
+      });
+      document.getElementById('closeGlyphModalBtn').addEventListener('click', closeGlyphModal);
+      document.getElementById('compareRefreshBtn').addEventListener('click', renderCompare);
     }
 
-    /**
-     * Handle File Input Selection
-     */
-    function handleFileInput(e) {
-      if (e.target.files.length > 0) {
-        processFiles(e.target.files);
-      }
+    async function handleFileSelect(e) {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+      await processFontFiles(files);
     }
 
-    /**
-     * Process list of File objects
-     */
-    async function processFiles(files) {
+    async function processFontFiles(files) {
       for (const file of files) {
-        const ext = file.name.split('.').pop().toLowerCase();
-        if (!['ttf', 'otf', 'woff', 'woff2'].includes(ext)) {
-          continue;
-        }
-
         try {
-          const fontId = generateId();
-          const fontName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9]/g, "_") + "_" + Date.now().toString().slice(-4);
           const arrayBuffer = await file.arrayBuffer();
-          const blobUrl = URL.createObjectURL(file);
+          const openTypeFont = opentype.parse(arrayBuffer);
 
-          // 1. Create Browser FontFace
-          const fontFace = new FontFace(fontName, `url(${blobUrl})`);
+          const fontFamilyName = openTypeFont.names.fontFamily?.en || file.name.split('.')[0].replace(/[^a-zA-Z0-9]/g, '_');
+          const fontId = `custom-font-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+
+          const fontFace = new FontFace(fontFamilyName, arrayBuffer);
           await fontFace.load();
           document.fonts.add(fontFace);
 
-          // 2. Parse using OpenType.js
-          let openTypeFont = null;
-          try {
-            openTypeFont = opentype.parse(arrayBuffer);
-          } catch (err) {
-            console.warn("OpenType.js parsing failed for extra features, CSS preview still active:", err);
-          }
-
           const fontObj = {
             id: fontId,
-            fontFamilyName: fontName,
-            originalName: file.name,
-            fileSize: (file.size / 1024).toFixed(1) + ' KB',
-            fontFace,
-            openTypeFont,
-            objectUrl: blobUrl
+            name: fontFamilyName,
+            fileName: file.name,
+            fontFamilyName: fontFamilyName,
+            openTypeFont: openTypeFont,
+            fileSize: formatBytes(file.size)
           };
 
           state.fonts.push(fontObj);
           setActiveFont(fontId);
-
-        } catch (error) {
-          console.error("Failed to load font file:", file.name, error);
+        } catch (err) {
+          console.error("Failed to parse font file:", file.name, err);
+          alert(`フォント "${file.name}" の読み込みに失敗しました。対応フォーマット(TTF/OTF/WOFF)であることを確認してください。`);
         }
       }
-
       renderFontList();
     }
 
-    /**
-     * Load default fallback system font
-     */
-    function loadDefaultSystemFonts() {
+    function renderDefaultSystemFont() {
       state.fonts = [];
-      const defaultFont = {
-        id: 'system_default',
-        fontFamilyName: 'Inter, sans-serif',
-        originalName: 'System Default (Inter / Noto Sans)',
-        fileSize: 'N/A',
-        fontFace: null,
+      const fontObj = {
+        id: 'system-default',
+        name: 'Inter / System Sans',
+        fileName: 'System Default',
+        fontFamilyName: 'Inter',
         openTypeFont: null,
-        objectUrl: null
+        fileSize: 'System'
       };
-      state.fonts.push(defaultFont);
-      setActiveFont('system_default');
+      state.fonts.push(fontObj);
+      setActiveFont('system-default');
       renderFontList();
     }
 
-    /**
-     * Set active selected font ID
-     */
     function setActiveFont(id) {
       state.activeFontId = id;
       const font = getActiveFont();
-      if (font) {
-        currentFontNameDisplay.textContent = font.originalName;
-      }
+      currentFontNameDisplay.textContent = font ? font.name : '---';
       renderFontList();
-      applyStyles();
-      renderActiveTabContent();
+      updatePreviewStyle();
+      renderActiveTab();
     }
 
     function getActiveFont() {
       return state.fonts.find(f => f.id === state.activeFontId) || state.fonts[0];
     }
 
-    /**
-     * Render Left Sidebar Font List
-     */
     function renderFontList() {
       fontCountBadge.textContent = state.fonts.length;
       fontListContainer.innerHTML = '';
@@ -750,18 +651,18 @@
       state.fonts.forEach(font => {
         const isActive = font.id === state.activeFontId;
         const item = document.createElement('div');
-        item.className = `p-2.5 rounded-lg border text-xs cursor-pointer flex items-center justify-between transition-all ${
+        item.className = `p-2 rounded-lg border text-xs cursor-pointer transition-all flex items-center justify-between ${
           isActive 
-            ? 'bg-indigo-600/20 border-indigo-500/50 text-slate-100 font-semibold' 
-            : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+            ? 'bg-indigo-600/20 border-indigo-500/50 text-indigo-200' 
+            : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
         }`;
 
         item.innerHTML = `
-          <div class="truncate flex-1 mr-2" style="font-family: '${font.fontFamilyName}'">
-            <div class="truncate font-medium text-slate-200">${font.originalName}</div>
-            <div class="text-[10px] text-slate-500 font-mono">${font.fileSize}</div>
+          <div class="truncate flex-1 pr-2">
+            <div class="font-semibold truncate">${escapeHtml(font.name)}</div>
+            <div class="text-[10px] text-slate-500 truncate">${escapeHtml(font.fileName)} (${font.fileSize})</div>
           </div>
-          ${isActive ? '<i class="fa-solid fa-circle-check text-indigo-400 text-xs shrink-0"></i>' : ''}
+          ${isActive ? '<i class="fa-solid fa-circle-check text-indigo-400"></i>' : ''}
         `;
 
         item.addEventListener('click', () => setActiveFont(font.id));
@@ -769,12 +670,21 @@
       });
     }
 
-    /**
-     * Apply Typography & Styling Options
-     */
-    function applyStyles() {
-      const font = getActiveFont();
-      const fontFamily = font ? `'${font.fontFamilyName}'` : 'sans-serif';
+    function updatePreviewTextFromPreset() {
+      const text = PRESETS[state.presetKey] || PRESETS.en_pangram_1;
+      state.customText = text;
+      customTextInput.value = text;
+      mainTextPreview.innerText = text;
+      updateCharCount();
+      renderActiveTab();
+    }
+
+    function updatePreviewStyle() {
+      const activeFont = getActiveFont();
+      const fontFamily = activeFont ? `'${activeFont.fontFamilyName}', 'Inter', sans-serif` : 'sans-serif';
+
+      previewCard.style.backgroundColor = state.bgColor;
+      previewCard.style.color = state.textColor;
 
       mainTextPreview.style.fontFamily = fontFamily;
       mainTextPreview.style.fontSize = `${state.fontSize}px`;
@@ -782,92 +692,60 @@
       mainTextPreview.style.letterSpacing = `${state.letterSpacing}px`;
       mainTextPreview.style.textAlign = state.textAlign;
 
-      previewCard.style.backgroundColor = state.bgColor;
-      previewCard.style.color = state.textColor;
-
-      updateCharCount();
-    }
-
-    function updatePreviewText() {
-      mainTextPreview.innerText = state.customText;
-      updateCharCount();
-      if (state.activeTab === 'waterfall') renderWaterfallView();
-      if (state.activeTab === 'compare') renderCompareView();
+      renderActiveTab();
     }
 
     function updateCharCount() {
-      charCountDisplay.textContent = `${mainTextPreview.innerText.length} 文字`;
+      const count = mainTextPreview.innerText ? mainTextPreview.innerText.length : 0;
+      charCountDisplay.textContent = `${count} 文字`;
     }
 
-    /**
-     * Tab Switch Handler
-     */
-    function switchTab(tabKey) {
-      state.activeTab = tabKey;
+    function switchTab(tabId) {
+      state.activeTab = tabId;
       document.querySelectorAll('.tab-btn').forEach(btn => {
-        const isActive = btn.dataset.tab === tabKey;
-        btn.className = `tab-btn px-4 py-3 border-b-2 font-medium text-sm flex items-center gap-2 transition-all ${
-          isActive 
-            ? 'border-indigo-500 text-indigo-400' 
-            : 'border-transparent text-slate-400 hover:text-slate-200'
-        }`;
+        const t = btn.getAttribute('data-tab');
+        if (t === tabId) {
+          btn.classList.add('border-indigo-500', 'text-indigo-400');
+          btn.classList.remove('border-transparent', 'text-slate-400');
+        } else {
+          btn.classList.remove('border-indigo-500', 'text-indigo-400');
+          btn.classList.add('border-transparent', 'text-slate-400');
+        }
       });
 
       document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.add('hidden');
+        if (content.id === `tab-${tabId}`) {
+          content.classList.remove('hidden');
+        } else {
+          content.classList.add('hidden');
+        }
       });
 
-      const activeContent = document.getElementById(`tab-${tabKey}`);
-      if (activeContent) {
-        activeContent.classList.remove('hidden');
-      }
-
-      renderActiveTabContent();
+      renderActiveTab();
     }
 
-    function renderActiveTabContent() {
-      switch (state.activeTab) {
-        case 'preview':
-          applyStyles();
-          break;
-        case 'waterfall':
-          renderWaterfallView();
-          break;
-        case 'glyphs':
-          renderGlyphsView();
-          break;
-        case 'info':
-          renderMetadataView();
-          break;
-        case 'compare':
-          renderCompareView();
-          break;
-        case 'css':
-          renderCssView();
-          break;
-      }
+    function renderActiveTab() {
+      if (state.activeTab === 'waterfall') renderWaterfall();
+      else if (state.activeTab === 'glyphs') renderGlyphs(document.getElementById('glyphSearchInput').value);
+      else if (state.activeTab === 'info') renderInfo();
+      else if (state.activeTab === 'compare') renderCompare();
+      else if (state.activeTab === 'css') renderCss();
     }
 
-    /**
-     * Render Waterfall View
-     */
-    function renderWaterfallView() {
+    function renderWaterfall() {
       const container = document.getElementById('waterfallContainer');
       container.innerHTML = '';
-
-      const font = getActiveFont();
-      const fontFamily = font ? `'${font.fontFamilyName}'` : 'sans-serif';
-      const text = state.customText || PRESETS.en_pangram_1;
       const sizes = [12, 16, 20, 24, 32, 48, 64, 72];
+      const font = getActiveFont();
+      const fontFamily = font ? `'${font.fontFamilyName}', sans-serif` : 'sans-serif';
+      const text = state.customText || PRESETS.en_pangram_1;
 
-      sizes.forEach(size => {
+      sizes.forEach(sz => {
         const row = document.createElement('div');
         row.className = 'pt-4 first:pt-0';
         row.innerHTML = `
-          <div class="text-[11px] font-mono text-indigo-400 mb-1 flex items-center gap-2">
-            <span class="bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">${size}px</span>
-          </div>
-          <div class="break-words overflow-hidden" style="font-family: ${fontFamily}; font-size: ${size}px; line-height: 1.3; color: ${state.textColor};">
+          <div class="text-xs text-slate-500 mb-1 font-mono">${sz}px</div>
+          <div class="break-words" style="font-family: ${fontFamily}; font-size: ${sz}px; line-height: 1.3; color: ${state.textColor};">
             ${escapeHtml(text)}
           </div>
         `;
@@ -875,332 +753,130 @@
       });
     }
 
-    /**
-     * Render Glyphs View
-     */
-    function renderGlyphsView() {
+    function renderGlyphs(searchFilter = '') {
       const font = getActiveFont();
       const grid = document.getElementById('glyphGrid');
-      const badge = document.getElementById('glyphCountBadge');
-      const filteredBadge = document.getElementById('glyphFilteredCount');
       grid.innerHTML = '';
 
       if (!font || !font.openTypeFont) {
-        grid.innerHTML = `
-          <div class="col-span-full py-12 text-center text-slate-500 text-sm">
-            <i class="fa-solid fa-file-circle-exclamation text-3xl mb-2 text-slate-600 block"></i>
-            OpenType解析データがありません（TTF / OTF ファイルを直接アップロードしてください）
-          </div>
-        `;
-        badge.textContent = '0';
-        filteredBadge.textContent = '0';
+        document.getElementById('glyphCountBadge').textContent = '0';
+        document.getElementById('glyphFilteredCount').textContent = '0';
+        grid.innerHTML = '<div class="col-span-full py-12 text-center text-slate-500 text-xs">カスタムTTF/OTFファイルを読み込むと全グリフが表示されます</div>';
         return;
       }
 
-      const otFont = font.openTypeFont;
-      const glyphs = otFont.glyphs.glyphs;
-      const glyphList = [];
+      const glyphs = font.openTypeFont.glyphs.glyphs;
+      const glyphArray = Object.values(glyphs);
+      document.getElementById('glyphCountBadge').textContent = glyphArray.length;
 
-      for (let i = 0; i < otFont.numGlyphs; i++) {
-        const glyph = glyphs[i];
-        if (glyph && (glyph.unicode !== undefined || glyph.name)) {
-          const charStr = glyph.unicode ? String.fromCharCode(glyph.unicode) : '';
-          glyphList.push({
-            index: i,
-            glyph: glyph,
-            unicode: glyph.unicode,
-            unicodeHex: glyph.unicode ? 'U+' + glyph.unicode.toString(16).padStart(4, '0').toUpperCase() : 'N/A',
-            char: charStr,
-            name: glyph.name || `glyph_${i}`
-          });
+      const filterLower = searchFilter.trim().toLowerCase();
+      let count = 0;
+
+      glyphArray.forEach((glyph, index) => {
+        const char = glyph.unicode ? String.fromCharCode(glyph.unicode) : '';
+        const uniHex = glyph.unicode ? `U+${glyph.unicode.toString(16).padStart(4, '0').toUpperCase()}` : '';
+
+        if (filterLower) {
+          const matchChar = char.toLowerCase().includes(filterLower);
+          const matchHex = uniHex.toLowerCase().includes(filterLower);
+          const matchName = (glyph.name || '').toLowerCase().includes(filterLower);
+          if (!matchChar && !matchHex && !matchName) return;
         }
-      }
 
-      badge.textContent = glyphList.length;
-      filteredBadge.textContent = glyphList.length;
+        count++;
 
-      // Store in window for filtering
-      window.currentGlyphList = glyphList;
-      renderFilteredGlyphs(glyphList);
-    }
-
-    function renderFilteredGlyphs(list) {
-      const grid = document.getElementById('glyphGrid');
-      const font = getActiveFont();
-      const fontFamily = font ? `'${font.fontFamilyName}'` : 'sans-serif';
-      grid.innerHTML = '';
-
-      const maxDisplay = 400; // Limit for UI performance
-      const slice = list.slice(0, maxDisplay);
-
-      slice.forEach(item => {
         const box = document.createElement('button');
-        box.className = 'glyph-box bg-slate-900 border border-slate-800 hover:border-indigo-500/80 hover:bg-indigo-950/30 rounded-xl flex flex-col items-center justify-center p-1 transition-all group relative';
-        box.title = `${item.name} (${item.unicodeHex})`;
-
+        box.className = 'glyph-box bg-slate-900 border border-slate-800 hover:border-indigo-500 hover:bg-slate-800 rounded-xl flex flex-col items-center justify-center p-1 transition-all group relative';
         box.innerHTML = `
-          <span class="text-xl sm:text-2xl font-normal text-slate-200 group-hover:scale-110 transition-transform" style="font-family: ${fontFamily}">
-            ${item.char ? escapeHtml(item.char) : '<span class="text-xs text-slate-600 font-mono">?</span>'}
+          <span class="text-lg font-medium text-slate-100 group-hover:scale-110 transition-transform" style="font-family: '${font.fontFamilyName}', sans-serif;">
+            ${escapeHtml(char || '?')}
           </span>
-          <span class="text-[9px] font-mono text-slate-500 mt-1 truncate max-w-full">${item.unicodeHex}</span>
+          <span class="text-[9px] font-mono text-slate-500 mt-0.5">${uniHex || `#${index}`}</span>
         `;
 
-        box.addEventListener('click', () => openGlyphModal(item));
+        box.addEventListener('click', () => openGlyphModal(glyph, char, uniHex, index));
         grid.appendChild(box);
       });
 
-      if (list.length > maxDisplay) {
-        const overflowNotice = document.createElement('div');
-        overflowNotice.className = 'col-span-full text-center text-xs text-slate-500 py-4';
-        overflowNotice.textContent = `...他 ${list.length - maxDisplay} 文字のグリフがあります（検索機能で絞り込めます）`;
-        grid.appendChild(overflowNotice);
-      }
+      document.getElementById('glyphFilteredCount').textContent = count;
     }
 
-    function filterGlyphs() {
-      const query = document.getElementById('glyphSearchInput').value.trim().toLowerCase();
-      if (!window.currentGlyphList) return;
-
-      const filtered = window.currentGlyphList.filter(item => {
-        if (!query) return true;
-        return item.char.toLowerCase().includes(query) ||
-               item.unicodeHex.toLowerCase().includes(query) ||
-               item.name.toLowerCase().includes(query);
-      });
-
-      document.getElementById('glyphFilteredCount').textContent = filtered.length;
-      renderFilteredGlyphs(filtered);
-    }
-
-    /**
-     * Open Glyph Vector Inspection Modal
-     */
-    function openGlyphModal(item) {
-      const modal = document.getElementById('glyphModal');
+    function renderInfo() {
       const font = getActiveFont();
-      const fontFamily = font ? `'${font.fontFamilyName}'` : 'sans-serif';
-
-      document.getElementById('modalGlyphBox').style.fontFamily = fontFamily;
-      document.getElementById('modalGlyphBox').textContent = item.char || '?';
-      document.getElementById('modalGlyphChar').textContent = item.char ? `文字 '${item.char}'` : item.name;
-      document.getElementById('modalGlyphUnicode').textContent = `Unicode: ${item.unicodeHex}`;
-      document.getElementById('modalGlyphName').textContent = item.name;
-      document.getElementById('modalGlyphIndex').textContent = item.index;
-      document.getElementById('modalGlyphAdvanceWidth').textContent = item.glyph.advanceWidth || 'N/A';
-
-      // Draw Path on Canvas
-      const canvas = document.getElementById('glyphPathCanvas');
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (font && font.openTypeFont && item.glyph) {
-        const x = 30;
-        const y = 120;
-        const fontSize = 100;
-        
-        ctx.fillStyle = '#818cf8';
-        const path = item.glyph.getPath(x, y, fontSize);
-        path.draw(ctx);
+      if (!font || !font.openTypeFont) {
+        document.getElementById('infoFontFamily').textContent = font ? font.name : '---';
+        document.getElementById('infoFontSubfamily').textContent = 'System Default';
+        document.getElementById('infoVersion').textContent = 'N/A';
+        document.getElementById('infoGlyphCount').textContent = 'N/A';
+        document.getElementById('infoFileSize').textContent = font ? font.fileSize : '---';
+        document.getElementById('infoUnitsPerEm').textContent = '---';
+        document.getElementById('infoAscender').textContent = '---';
+        document.getElementById('infoDescender').textContent = '---';
+        document.getElementById('infoEmHeight').textContent = '---';
+        document.getElementById('infoMetadataTable').innerHTML = '<tr><td colspan="2" class="py-4 text-center text-slate-500">解析データはありません</td></tr>';
+        return;
       }
 
-      modal.classList.remove('hidden');
-    }
+      const otf = font.openTypeFont;
+      document.getElementById('infoFontFamily').textContent = otf.names.fontFamily?.en || font.name;
+      document.getElementById('infoFontSubfamily').textContent = otf.names.fontSubfamily?.en || 'Regular';
+      document.getElementById('infoVersion').textContent = otf.names.version?.en || '1.0';
+      document.getElementById('infoGlyphCount').textContent = otf.numGlyphs;
+      document.getElementById('infoFileSize').textContent = font.fileSize;
 
-    /**
-     * Render Font Metadata Information
-     */
-    function renderMetadataView() {
-      const font = getActiveFont();
-      
-      const elFamily = document.getElementById('infoFontFamily');
-      const elSubfamily = document.getElementById('infoFontSubfamily');
-      const elVersion = document.getElementById('infoVersion');
-      const elGlyphCount = document.getElementById('infoGlyphCount');
-      const elFileSize = document.getElementById('infoFileSize');
-
-      const elUnitsPerEm = document.getElementById('infoUnitsPerEm');
-      const elAscender = document.getElementById('infoAscender');
-      const elDescender = document.getElementById('infoDescender');
-      const elEmHeight = document.getElementById('infoEmHeight');
+      document.getElementById('infoUnitsPerEm').textContent = otf.unitsPerEm;
+      document.getElementById('infoAscender').textContent = otf.ascender;
+      document.getElementById('infoDescender').textContent = otf.descender;
+      document.getElementById('infoEmHeight').textContent = otf.ascender - otf.descender;
 
       const tableBody = document.getElementById('infoMetadataTable');
       tableBody.innerHTML = '';
 
-      if (!font || !font.openTypeFont) {
-        elFamily.textContent = font.originalName;
-        elSubfamily.textContent = 'Standard';
-        elVersion.textContent = '1.0';
-        elGlyphCount.textContent = 'N/A';
-        elFileSize.textContent = font.fileSize;
-
-        elUnitsPerEm.textContent = '1000';
-        elAscender.textContent = '800';
-        elDescender.textContent = '-200';
-        elEmHeight.textContent = '1000';
-
-        tableBody.innerHTML = `<tr><td colspan="2" class="py-4 text-center text-slate-500">メタデータ解析情報はありません</td></tr>`;
-        return;
-      }
-
-      const ot = font.openTypeFont;
-      const names = ot.names;
-
-      elFamily.textContent = getFontNameField(names, 'fontFamily') || font.originalName;
-      elSubfamily.textContent = getFontNameField(names, 'fontSubfamily') || 'Regular';
-      elVersion.textContent = getFontNameField(names, 'version') || 'N/A';
-      elGlyphCount.textContent = ot.numGlyphs || 'N/A';
-      elFileSize.textContent = font.fileSize;
-
-      elUnitsPerEm.textContent = ot.unitsPerEm || '1000';
-      elAscender.textContent = ot.ascender || 'N/A';
-      elDescender.textContent = ot.descender || 'N/A';
-      elEmHeight.textContent = (ot.ascender && ot.descender) ? (ot.ascender - ot.descender) : 'N/A';
-
-      // Build Name Table Rows
-      const nameKeys = [
-        { key: 'fontFamily', label: 'フォントファミリー名 (Font Family)' },
-        { key: 'fontSubfamily', label: 'サブファミリー名 (Subfamily / Style)' },
-        { key: 'uniqueID', label: '一意識別子 (Unique ID)' },
-        { key: 'fullName', label: 'フルネーム (Full Name)' },
-        { key: 'version', label: 'バージョン (Version)' },
-        { key: 'postScriptName', label: 'PostScript名' },
-        { key: 'designer', label: 'デザイナー (Designer)' },
-        { key: 'manufacturer', label: '制作会社 / 組織 (Manufacturer)' },
-        { key: 'description', label: '説明 (Description)' },
-        { key: 'license', label: 'ライセンス情報 (License)' },
-        { key: 'copyright', label: '著作権 (Copyright)' }
-      ];
-
-      nameKeys.forEach(({ key, label }) => {
-        const val = getFontNameField(names, key);
-        if (val) {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td class="py-2.5 px-3 text-slate-400 font-medium">${escapeHtml(label)}</td>
-            <td class="py-2.5 px-3 font-mono text-slate-200">${escapeHtml(val)}</td>
-          `;
-          tableBody.appendChild(row);
-        }
+      Object.entries(otf.names).forEach(([key, valMap]) => {
+        const val = valMap.en || Object.values(valMap)[0] || '';
+        if (!val) return;
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-slate-800/40 hover:bg-slate-800/30';
+        tr.innerHTML = `
+          <td class="py-2 px-3 font-mono text-indigo-300 capitalize">${escapeHtml(key)}</td>
+          <td class="py-2 px-3 break-all">${escapeHtml(val)}</td>
+        `;
+        tableBody.appendChild(tr);
       });
     }
 
-    function getFontNameField(names, key) {
-      if (!names || !names[key]) return null;
-      const item = names[key];
-      if (typeof item === 'string') return item;
-      if (typeof item === 'object') {
-        return item.ja || item.en || Object.values(item)[0] || null;
-      }
-      return null;
-    }
-
-    /**
-     * Render Compare Mode
-     */
-    function renderCompareView() {
+    function renderCompare() {
       const container = document.getElementById('compareList');
       container.innerHTML = '';
-
-      if (state.fonts.length === 0) {
-        container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs">フォントが読み込まれていません</div>`;
-        return;
-      }
+      const text = state.customText || PRESETS.en_pangram_1;
 
       state.fonts.forEach(font => {
         const card = document.createElement('div');
-        card.className = 'bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-2';
+        card.className = 'bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2';
         card.innerHTML = `
-          <div class="flex justify-between items-center border-b border-slate-800/80 pb-2 text-xs">
-            <span class="font-bold text-indigo-400">${escapeHtml(font.originalName)}</span>
-            <span class="text-slate-500 font-mono">${font.fileSize}</span>
+          <div class="flex justify-between items-center text-xs text-slate-400 pb-2 border-b border-slate-800/60">
+            <span class="font-semibold text-slate-200">${escapeHtml(font.name)}</span>
+            <span class="font-mono text-[10px] text-slate-500">${escapeHtml(font.fileName)}</span>
           </div>
-          <div class="break-words py-2" style="font-family: '${font.fontFamilyName}'; font-size: ${state.fontSize}px; line-height: ${state.lineHeight}; letter-spacing: ${state.letterSpacing}px; color: ${state.textColor};">
-            ${escapeHtml(state.customText)}
+          <div class="text-slate-100 break-words py-2" style="font-family: '${font.fontFamilyName}', sans-serif; font-size: ${state.fontSize}px; line-height: ${state.lineHeight}; letter-spacing: ${state.letterSpacing}px;">
+            ${escapeHtml(text)}
           </div>
         `;
         container.appendChild(card);
       });
     }
 
-    /**
-     * Render CSS `@font-face` Code Generator
-     */
-    function renderCssView() {
+    function renderCss() {
       const font = getActiveFont();
-      const codeEl = document.getElementById('cssOutputCode');
+      const code = document.getElementById('cssOutputCode');
+      if (!font || font.id === 'system-default') {
+        code.textContent = `/* ローカルのTTF/OTFフォントファイルを読み込むと、\n   ここに @font-face のCSSコードが自動生成されます。 */`;
+        return;
+      }
 
-      if (!font) return;
-
-      const cssSnippet = `@font-face {
-  font-family: '${font.fontFamilyName}';
-  src: url('./fonts/${font.originalName}') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* 使用例 */
-.custom-font-text {
-  font-family: '${font.fontFamilyName}', sans-serif;
-  font-size: ${state.fontSize}px;
-  line-height: ${state.lineHeight};
-  letter-spacing: ${state.letterSpacing}px;
-}`;
-
-      codeEl.textContent = cssSnippet;
+      code.textContent = `@font-face {\n  font-family: '${font.fontFamilyName}';\n  src: url('fonts/${font.fileName}') format('truetype');\n  font-weight: normal;\n  font-style: normal;\n  font-display: swap;\n}\n\n.custom-font-style {\n  font-family: '${font.fontFamilyName}', sans-serif;\n  font-size: ${state.fontSize}px;\n  line-height: ${state.lineHeight};\n  letter-spacing: ${state.letterSpacing}px;\n}`;
     }
 
-    /**
-     * Copy CSS snippet to clipboard
-     */
-    function copyCssToClipboard() {
-      const text = document.getElementById('cssOutputCode').textContent;
-      
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-
-      const btn = document.getElementById('copyCssBtn');
-      const origHtml = btn.innerHTML;
-      btn.innerHTML = `<i class="fa-solid fa-check"></i> コピー完了!`;
-      btn.classList.replace('bg-indigo-600', 'bg-emerald-600');
-
-      setTimeout(() => {
-        btn.innerHTML = origHtml;
-        btn.classList.replace('bg-emerald-600', 'bg-indigo-600');
-      }, 2000);
-    }
-
-    /**
-     * Copy Preview Text to Clipboard
-     */
-    function copyPreviewTextToClipboard() {
-      const text = mainTextPreview.innerText;
-      
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-
-      const btn = document.getElementById('copyPreviewTextBtn');
-      const origHtml = btn.innerHTML;
-      btn.innerHTML = `<i class="fa-solid fa-check text-emerald-400"></i> <span class="text-emerald-400">コピーしました!</span>`;
-
-      setTimeout(() => {
-        btn.innerHTML = origHtml;
-      }, 2000);
-    }
-
-    /**
-     * Copy Preview Area as PNG Image to Clipboard
-     */
     async function copyPreviewImageToClipboard() {
       const btn = document.getElementById('copyPreviewImageBtn');
       const origHtml = btn.innerHTML;
@@ -1209,58 +885,86 @@
         btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> <span>生成中...</span>`;
         btn.disabled = true;
 
-        // Ensure all fonts are completely loaded
-        if (document.fonts) {
-          await document.fonts.ready;
+        if (document.fonts) await document.fonts.ready;
+
+        const text = mainTextPreview.innerText || state.customText || '';
+        const activeFont = getActiveFont();
+        const fontSize = state.fontSize;
+        const lineHeightRatio = state.lineHeight;
+        const letterSpacing = state.letterSpacing;
+        const textAlign = state.textAlign;
+        const padding = 48;
+        const scale = 2; // High-res Retina rendering
+
+        const lines = text.split('\n');
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const fontFamilyName = activeFont ? activeFont.fontFamilyName : 'sans-serif';
+        const fontSpec = `${fontSize}px '${fontFamilyName}', sans-serif`;
+        ctx.font = fontSpec;
+
+        function measureLineWidth(line) {
+          if (!line) return 0;
+          let width = 0;
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            const charWidth = ctx.measureText(char).width;
+            width += charWidth + (i < line.length - 1 ? letterSpacing : 0);
+          }
+          return width;
         }
 
-        const previewCardElement = document.getElementById('previewCard');
-        const originalWidth = previewCardElement.offsetWidth;
-
-        // Create an off-screen container for precise pixel rendering
-        const renderContainer = document.createElement('div');
-        renderContainer.style.position = 'absolute';
-        renderContainer.style.top = '-9999px';
-        renderContainer.style.left = '-9999px';
-        renderContainer.style.width = `${originalWidth}px`;
-        renderContainer.style.padding = '32px';
-        renderContainer.style.backgroundColor = state.bgColor;
-        renderContainer.style.color = state.textColor;
-        renderContainer.style.borderRadius = '16px';
-        renderContainer.style.boxSizing = 'border-box';
-
-        // Add text element with explicit font & spacing styles to avoid contenteditable rendering quirks
-        const textElement = document.createElement('div');
-        const activeFont = getActiveFont();
-        textElement.style.fontFamily = activeFont ? `'${activeFont.fontFamilyName}'` : 'sans-serif';
-        textElement.style.fontSize = `${state.fontSize}px`;
-        textElement.style.lineHeight = state.lineHeight;
-        textElement.style.letterSpacing = `${state.letterSpacing}px`;
-        textElement.style.textAlign = state.textAlign;
-        textElement.style.whiteSpace = 'pre-wrap';
-        textElement.style.wordBreak = 'break-word';
-        textElement.textContent = mainTextPreview.innerText;
-
-        renderContainer.appendChild(textElement);
-        document.body.appendChild(renderContainer);
-
-        const canvas = await html2canvas(renderContainer, {
-          backgroundColor: state.bgColor,
-          scale: 2, // High DPI capture
-          useCORS: true,
-          logging: false
+        let maxLineWidth = 0;
+        lines.forEach(line => {
+          const w = measureLineWidth(line);
+          if (w > maxLineWidth) maxLineWidth = w;
         });
 
-        // Clean up temporary DOM element
-        document.body.removeChild(renderContainer);
+        const linePxHeight = fontSize * lineHeightRatio;
+        const contentWidth = Math.max(maxLineWidth, 200);
+        const contentHeight = lines.length * linePxHeight;
 
-        canvas.toBlob(async (blob) => {
-          if (!blob) {
-            throw new Error('Canvas conversion failed');
+        const canvasWidth = contentWidth + (padding * 2);
+        const canvasHeight = contentHeight + (padding * 2);
+
+        canvas.width = canvasWidth * scale;
+        canvas.height = canvasHeight * scale;
+
+        ctx.scale(scale, scale);
+
+        // Background
+        ctx.fillStyle = state.bgColor;
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        // Foreground
+        ctx.fillStyle = state.textColor;
+        ctx.font = fontSpec;
+        ctx.textBaseline = 'middle';
+
+        // Precise character placement
+        lines.forEach((line, lineIndex) => {
+          const centerY = padding + (lineIndex * linePxHeight) + (linePxHeight / 2);
+          const lineWidth = measureLineWidth(line);
+
+          let startX = padding;
+          if (textAlign === 'center') {
+            startX = padding + (contentWidth - lineWidth) / 2;
+          } else if (textAlign === 'right') {
+            startX = padding + contentWidth - lineWidth;
           }
 
+          let currentX = startX;
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            ctx.fillText(char, currentX, centerY);
+            currentX += ctx.measureText(char).width + letterSpacing;
+          }
+        });
+
+        canvas.toBlob(async (blob) => {
+          if (!blob) throw new Error('Blob creation failed');
           try {
-            // Write PNG blob directly to clipboard
             const item = new ClipboardItem({ 'image/png': blob });
             await navigator.clipboard.write([item]);
 
@@ -1273,14 +977,12 @@
               btn.disabled = false;
             }, 2000);
           } catch (clipErr) {
-            console.warn('Direct clipboard write unsupported or blocked, falling back to download:', clipErr);
-            // Fallback: Download image if clipboard API fails
             const link = document.createElement('a');
             link.download = `font-preview-${Date.now()}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
 
-            btn.innerHTML = `<i class="fa-solid fa-download"></i> <span>画像ダウンロード</span>`;
+            btn.innerHTML = `<i class="fa-solid fa-download"></i> <span>画像保存しました</span>`;
             setTimeout(() => {
               btn.innerHTML = origHtml;
               btn.disabled = false;
@@ -1289,8 +991,8 @@
         }, 'image/png');
 
       } catch (err) {
-        console.error('Failed to copy image:', err);
-        btn.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-300"></i> <span>コピー失敗</span>`;
+        console.error('Image render error:', err);
+        btn.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <span>失敗</span>`;
         setTimeout(() => {
           btn.innerHTML = origHtml;
           btn.disabled = false;
@@ -1298,9 +1000,104 @@
       }
     }
 
-    /**
-     * Helper: Escape HTML
-     */
+    function copyPreviewTextToClipboard() {
+      const text = mainTextPreview.innerText || '';
+      copyToClipboardText(text, 'copyPreviewTextBtn', 'テキストをコピー');
+    }
+
+    function copyCssToClipboard() {
+      const code = document.getElementById('cssOutputCode').textContent;
+      copyToClipboardText(code, 'copyCssBtn', 'コピー');
+    }
+
+    function copyToClipboardText(text, buttonId, defaultLabel) {
+      const btn = document.getElementById(buttonId);
+      const origHtml = btn.innerHTML;
+
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+
+      try {
+        document.execCommand('copy');
+        btn.innerHTML = `<i class="fa-solid fa-check"></i> <span>コピー完了</span>`;
+      } catch (e) {
+        btn.innerHTML = `<span>失敗</span>`;
+      }
+
+      document.body.removeChild(textarea);
+
+      setTimeout(() => {
+        btn.innerHTML = origHtml;
+      }, 2000);
+    }
+
+    function openGlyphModal(glyph, char, uniHex, index) {
+      const modal = document.getElementById('glyphModal');
+      const font = getActiveFont();
+
+      document.getElementById('modalGlyphBox').style.fontFamily = font ? `'${font.fontFamilyName}', sans-serif` : 'sans-serif';
+      document.getElementById('modalGlyphBox').textContent = char || '?';
+      document.getElementById('modalGlyphChar').textContent = char ? `文字: "${char}"` : 'Undefined Character';
+      document.getElementById('modalGlyphUnicode').textContent = uniHex || 'U+----';
+      document.getElementById('modalGlyphName').textContent = glyph.name || '---';
+      document.getElementById('modalGlyphIndex').textContent = index;
+      document.getElementById('modalGlyphAdvanceWidth').textContent = glyph.advanceWidth || '---';
+
+      modal.classList.remove('hidden');
+
+      // Draw vector path via opentype
+      const canvas = document.getElementById('glyphPathCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (glyph && glyph.getPath) {
+        try {
+          const path = glyph.getPath(30, 120, 100);
+          path.fill = '#818cf8';
+          path.draw(ctx);
+        } catch (e) {
+          console.warn('Cannot render glyph path:', e);
+        }
+      }
+    }
+
+    function closeGlyphModal() {
+      document.getElementById('glyphModal').classList.add('hidden');
+    }
+
+    function setupDragAndDrop() {
+      window.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dragDropOverlay.classList.remove('hidden');
+      });
+
+      dragDropOverlay.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dragDropOverlay.classList.add('hidden');
+      });
+
+      dragDropOverlay.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        dragDropOverlay.classList.add('hidden');
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          await processFontFiles(e.dataTransfer.files);
+        }
+      });
+    }
+
+    function formatBytes(bytes, decimals = 1) {
+      if (!bytes || bytes === 0) return '0 B';
+      const k = 1024;
+      const dm = decimals < 0 ? 0 : decimals;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
     function escapeHtml(str) {
       if (!str) return '';
       return String(str)
