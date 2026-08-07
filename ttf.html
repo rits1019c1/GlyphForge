@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TTF フォントプレビューツール</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- OpenType.js for Font Metadata & Glyph Parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/opentype.js/1.3.4/opentype.min.js"></script>
+  <!-- Google Fonts: Inter & Noto Sans JP for UI -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+    }
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    .glyph-box {
+      aspect-ratio: 1;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden bg-slate-950 text-slate-200">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-6 py-3.5 flex items-center justify-between shrink-0 z-20">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold text-xl shadow-inner">
+        <i class="fa-solid font-mono text-indigo-400">Aa</i>
+      </div>
+      <div>
+        <h1 class="font-bold text-lg text-slate-100 flex items-center gap-2">
+          TTF Font Inspector
+          <span class="text-xs font-normal px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Pro</span>
+        </h1>
+        <p class="text-xs text-slate-400">TTF / OTF / WOFF / WOFF2 フォントプレビュー・解析ツール</p>
+      </div>
+    </div>
+
+    <!-- Upload Button & File Input -->
+    <div class="flex items-center gap-3">
+      <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-lg shadow-indigo-600/20 flex items-center gap-2 active:scale-95">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+        <span>フォントを開く</span>
+        <input type="file" id="fontInput" accept=".ttf,.otf,.woff,.woff2" multiple class="hidden">
+      </label>
+      <button id="resetDemoBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-2 rounded-lg text-sm font-medium transition-all hover:text-white flex items-center gap-2" title="サンプルフォントに戻す">
+        <i class="fa-solid fa-rotate-left"></i>
+        <span class="hidden sm:inline">リセット</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- Sidebar / Control Panel -->
+    <aside class="w-80 border-r border-slate-800 bg-slate-900 flex flex-col shrink-0 overflow-y-auto">
+      
+      <!-- Loaded Fonts List -->
+      <div class="p-4 border-b border-slate-800">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">読み込み中フォント</span>
+          <span id="fontCountBadge" class="text-xs bg-slate-800 px-2 py-0.5 rounded-full text-slate-300">0</span>
+        </div>
+        <div id="fontListContainer" class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+          <!-- Dynamically populated font items -->
+        </div>
+      </div>
+
+      <!-- Text Presets & Custom Input -->
+      <div class="p-4 border-b border-slate-800 space-y-3">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">プレビューテキスト</span>
+        
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">プリセット選択</label>
+          <select id="presetSelect" class="w-full bg-slate-950 border border-slate-700 rounded-lg text-xs p-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+            <option value="ja_pangram_1">日本語: いろはにほへと（いろは歌）</option>
+            <option value="ja_pangram_2">日本語: 鳥の歌（パングラム）</option>
+            <option value="ja_sample_1">日本語: 夏目漱石『吾輩は猫である』</option>
+            <option value="en_pangram_1" selected>英語: The quick brown fox jumps...</option>
+            <option value="numbers_symbols">数字 &amp; 記号 (0-9, !@#$%...)</option>
+            <option value="alphabet_upper">英大文字 (A - Z)</option>
+            <option value="alphabet_lower">英小文字 (a - z)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">カスタムテキスト</label>
+          <textarea id="customTextInput" rows="3" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 resize-none" placeholder="自由に入力してください..."></textarea>
+        </div>
+      </div>
+
+      <!-- Font Controls -->
+      <div class="p-4 space-y-4">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">スタイル設定</span>
+
+        <!-- Font Size Slider -->
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-slate-300">文字サイズ</span>
+            <span id="fontSizeValue" class="text-indigo-400 font-mono">32px</span>
+          </div>
+          <input type="range" id="fontSizeSlider" min="12" max="144" value="32" class="w-full accent-indigo-500 cursor-pointer">
+        </div>
+
+        <!-- Line Height Slider -->
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-slate-300">行高 (Line Height)</span>
+            <span id="lineHeightValue" class="text-indigo-400 font-mono">1.4</span>
+          </div>
+          <input type="range" id="lineHeightSlider" min="0.8" max="2.5" step="0.1" value="1.4" class="w-full accent-indigo-500 cursor-pointer">
+        </div>
+
+        <!-- Letter Spacing Slider -->
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-slate-300">字間 (Letter Spacing)</span>
+            <span id="letterSpacingValue" class="text-indigo-400 font-mono">0px</span>
+          </div>
+          <input type="range" id="letterSpacingSlider" min="-5" max="20" step="0.5" value="0" class="w-full accent-indigo-500 cursor-pointer">
+        </div>
+
+        <!-- Alignment -->
+        <div>
+          <label class="block text-xs text-slate-300 mb-1.5">揃え位置</label>
+          <div class="grid grid-cols-4 gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+            <button data-align="left" class="align-btn py-1 rounded text-xs bg-slate-800 text-slate-100"><i class="fa-solid fa-align-left"></i></button>
+            <button data-align="center" class="align-btn py-1 rounded text-xs text-slate-400 hover:text-slate-200"><i class="fa-solid fa-align-center"></i></button>
+            <button data-align="right" class="align-btn py-1 rounded text-xs text-slate-400 hover:text-slate-200"><i class="fa-solid fa-align-right"></i></button>
+            <button data-align="justify" class="align-btn py-1 rounded text-xs text-slate-400 hover:text-slate-200"><i class="fa-solid fa-align-justify"></i></button>
+          </div>
+        </div>
+
+        <!-- Colors & Theme -->
+        <div class="space-y-2">
+          <label class="block text-xs text-slate-300">表示モード &amp; カラー</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button id="themeLightBtn" class="py-1.5 px-2 bg-slate-100 text-slate-900 border border-slate-300 rounded-lg text-xs font-semibold hover:bg-white flex items-center justify-center gap-1">
+              <i class="fa-solid fa-sun"></i> ライト
+            </button>
+            <button id="themeDarkBtn" class="py-1.5 px-2 bg-slate-950 text-slate-100 border border-slate-800 rounded-lg text-xs font-semibold hover:bg-slate-900 flex items-center justify-center gap-1">
+              <i class="fa-solid fa-moon"></i> ダーク
+            </button>
+            <button id="themeInvertBtn" class="py-1.5 px-2 bg-indigo-950 text-indigo-200 border border-indigo-800 rounded-lg text-xs font-semibold hover:bg-indigo-900 flex items-center justify-center gap-1">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> 調整
+            </button>
+          </div>
+          <div class="flex items-center gap-2 pt-1">
+            <div class="flex-1 flex items-center gap-2 bg-slate-950 p-1.5 rounded-lg border border-slate-800">
+              <input type="color" id="textColorPicker" value="#f8fafc" class="w-6 h-6 rounded cursor-pointer bg-transparent border-0">
+              <span class="text-xs text-slate-400">文字色</span>
+            </div>
+            <div class="flex-1 flex items-center gap-2 bg-slate-950 p-1.5 rounded-lg border border-slate-800">
+              <input type="color" id="bgColorPicker" value="#020617" class="w-6 h-6 rounded cursor-pointer bg-transparent border-0">
+              <span class="text-xs text-slate-400">背景色</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </aside>
+
+    <!-- Right Main Viewport -->
+    <main class="flex-1 flex flex-col bg-slate-950 overflow-hidden">
+      
+      <!-- View Navigation Tabs -->
+      <div class="border-b border-slate-800 bg-slate-900/50 px-6 flex items-center justify-between shrink-0">
+        <div class="flex gap-1 -mb-px">
+          <button data-tab="preview" class="tab-btn px-4 py-3 border-b-2 border-indigo-500 font-medium text-sm text-indigo-400 flex items-center gap-2">
+            <i class="fa-solid fa-eye"></i> プレビュー
+          </button>
+          <button data-tab="waterfall" class="tab-btn px-4 py-3 border-b-2 border-transparent font-medium text-sm text-slate-400 hover:text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-bars-staggered"></i> ウォーターフォール
+          </button>
+          <button data-tab="glyphs" class="tab-btn px-4 py-3 border-b-2 border-transparent font-medium text-sm text-slate-400 hover:text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-grip text-xs"></i> グリフ一覧 (<span id="glyphCountBadge">0</span>)
+          </button>
+          <button data-tab="info" class="tab-btn px-4 py-3 border-b-2 border-transparent font-medium text-sm text-slate-400 hover:text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-circle-info"></i> メタデータ情報
+          </button>
+          <button data-tab="compare" class="tab-btn px-4 py-3 border-b-2 border-transparent font-medium text-sm text-slate-400 hover:text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-columns"></i> 比較モード
+          </button>
+          <button data-tab="css" class="tab-btn px-4 py-3 border-b-2 border-transparent font-medium text-sm text-slate-400 hover:text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-code"></i> CSS出力
+          </button>
+        </div>
+
+        <div id="activeFontBadge" class="text-xs text-slate-400 font-mono hidden md:block">
+          選択中: <span class="text-slate-200 font-semibold" id="currentFontNameDisplay">---</span>
+        </div>
+      </div>
+
+      <!-- Tab Contents Area -->
+      <div id="tabContents" class="flex-1 overflow-y-auto relative p-6">
+        
+        <!-- Drop Overlay Zone -->
+        <div id="dragDropOverlay" class="hidden absolute inset-0 bg-indigo-950/90 border-4 border-dashed border-indigo-500 rounded-xl m-4 z-50 flex flex-col items-center justify-center text-center p-6 backdrop-blur-md transition-all">
+          <i class="fa-solid fa-file-circle-plus text-6xl text-indigo-400 mb-4 animate-bounce"></i>
+          <h2 class="text-2xl font-bold text-white mb-2">ここにフォントファイルをドロップ</h2>
+          <p class="text-indigo-200 text-sm">TTF, OTF, WOFF, WOFF2 に対応しています</p>
+        </div>
+
+        <!-- TAB 1: Main Editable Preview -->
+        <div id="tab-preview" class="tab-content h-full flex flex-col">
+          <div id="previewCard" class="flex-1 rounded-2xl border border-slate-800 p-8 flex flex-col justify-center overflow-auto transition-colors duration-200 shadow-inner relative" style="background-color: #020617; color: #f8fafc;">
+            <div id="mainTextPreview" contenteditable="true" class="outline-none break-words min-h-[100px]" style="font-size: 32px; line-height: 1.4; letter-spacing: 0px; text-align: left;">
+              The quick brown fox jumps over the lazy dog.
+            </div>
+          </div>
+          <div class="mt-3 flex justify-between items-center text-xs text-slate-500">
+            <span><i class="fa-regular fa-lightbulb"></i> テキスト領域は直接クリックして編集できます</span>
+            <span id="charCountDisplay">43 文字</span>
+          </div>
+        </div>
+
+        <!-- TAB 2: Waterfall View -->
+        <div id="tab-waterfall" class="tab-content hidden space-y-6">
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-6">
+            <h3 class="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-text-height text-indigo-400"></i> サイズ別階層表示 (Waterfall)
+            </h3>
+            <div id="waterfallContainer" class="space-y-6 divide-y divide-slate-800/60">
+              <!-- Dynamically rendered sizes -->
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: Glyph Grid View -->
+        <div id="tab-glyphs" class="tab-content hidden space-y-4">
+          <div class="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center bg-slate-900 p-4 rounded-xl border border-slate-800">
+            <div class="relative flex-1 w-full">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+              <input type="text" id="glyphSearchInput" placeholder="文字またはUnicode (例: A, U+0041, あ)" class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+            </div>
+            <div class="text-xs text-slate-400 whitespace-nowrap">
+              表示中: <span id="glyphFilteredCount" class="text-indigo-400 font-semibold">0</span> 文字
+            </div>
+          </div>
+
+          <div id="glyphGrid" class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-16 gap-2">
+            <!-- Dynamically populated glyph boxes -->
+          </div>
+        </div>
+
+        <!-- TAB 4: Font Info & Metadata -->
+        <div id="tab-info" class="tab-content hidden space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Key Stats -->
+            <div class="lg:col-span-1 space-y-4">
+              <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl">
+                <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">基本スペック</h4>
+                <dl class="space-y-3 text-sm">
+                  <div>
+                    <dt class="text-xs text-slate-500">フォントファミリー</dt>
+                    <dd id="infoFontFamily" class="font-medium text-slate-200">---</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-slate-500">サブファミリー / スタイル</dt>
+                    <dd id="infoFontSubfamily" class="font-medium text-slate-200">---</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-slate-500">バージョン</dt>
+                    <dd id="infoVersion" class="font-medium text-slate-200 text-xs font-mono">---</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-slate-500">収録グリフ数</dt>
+                    <dd id="infoGlyphCount" class="font-medium text-slate-200">---</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-slate-500">ファイルサイズ</dt>
+                    <dd id="infoFileSize" class="font-medium text-slate-200">---</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <!-- Metrics -->
+              <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl">
+                <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">メトリクス情報 (Metrics)</h4>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                  <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                    <div class="text-xs text-slate-500">Units Per Em</div>
+                    <div id="infoUnitsPerEm" class="font-mono text-indigo-400 font-semibold">---</div>
+                  </div>
+                  <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                    <div class="text-xs text-slate-500">Ascender</div>
+                    <div id="infoAscender" class="font-mono text-emerald-400 font-semibold">---</div>
+                  </div>
+                  <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                    <div class="text-xs text-slate-500">Descender</div>
+                    <div id="infoDescender" class="font-mono text-rose-400 font-semibold">---</div>
+                  </div>
+                  <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                    <div class="text-xs text-slate-500">Height (EM)</div>
+                    <div id="infoEmHeight" class="font-mono text-amber-400 font-semibold">---</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Full Naming Metadata Table -->
+            <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5 overflow-x-auto">
+              <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Name テーブル詳細</h4>
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-800 text-slate-400">
+                    <th class="py-2 px-3 font-semibold w-1/3">プロパティ</th>
+                    <th class="py-2 px-3 font-semibold">値</th>
+                  </tr>
+                </thead>
+                <tbody id="infoMetadataTable" class="divide-y divide-slate-800/60 text-slate-300">
+                  <!-- Dynamically populated metadata -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 5: Font Comparison -->
+        <div id="tab-compare" class="tab-content hidden space-y-4">
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
+            <p class="text-xs text-slate-400">読み込まれているすべてのフォントで指定テキストを同時に表示比較します。</p>
+            <button id="compareRefreshBtn" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg">
+              <i class="fa-solid fa-arrows-rotate"></i> 更新
+            </button>
+          </div>
+          <div id="compareList" class="space-y-4">
+            <!-- Dynamically populated comparison rows -->
+          </div>
+        </div>
+
+        <!-- TAB 6: CSS Export -->
+        <div id="tab-css" class="tab-content hidden space-y-4">
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                <i class="fa-solid fa-code text-indigo-400"></i> `@font-face` CSS コード生成
+              </h3>
+              <button id="copyCssBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all">
+                <i class="fa-solid fa-copy"></i>
+                <span>コピー</span>
+              </button>
+            </div>
+            
+            <pre class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-indigo-300 font-mono text-xs overflow-x-auto leading-relaxed" id="cssOutputCode">
+/* フォントを読み込むとCSSコードがここに生成されます */
+            </pre>
+
+            <div class="mt-4 p-4 rounded-lg bg-indigo-950/40 border border-indigo-800/40 text-xs text-indigo-200 space-y-1">
+              <div class="font-semibold text-indigo-300"><i class="fa-solid fa-circle-info"></i> 使用方法:</div>
+              <p>1. 上記のCSSをプロジェクトのスタイルシートに貼り付けます。</p>
+              <p>2. フォントファイル（.ttf）をプロジェクトの `/fonts/` ディレクトリに配置してください。</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Glyph Detail Modal Popup -->
+  <div id="glyphModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 relative shadow-2xl space-y-4">
+      <button id="closeGlyphModalBtn" class="absolute top-4 right-4 text-slate-400 hover:text-slate-100 text-lg w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-800">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center gap-4 border-b border-slate-800 pb-4">
+        <div id="modalGlyphBox" class="w-20 h-20 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center text-4xl text-slate-100 font-bold overflow-hidden">
+          A
+        </div>
+        <div>
+          <h3 id="modalGlyphChar" class="text-xl font-bold text-slate-100">Character</h3>
+          <p id="modalGlyphUnicode" class="text-xs font-mono text-indigo-400">Unicode: U+0041</p>
+        </div>
+      </div>
+
+      <div class="space-y-2 text-xs">
+        <div class="flex justify-between py-1.5 border-b border-slate-800/60">
+          <span class="text-slate-400">文字名 (Name)</span>
+          <span id="modalGlyphName" class="font-mono text-slate-200">A</span>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-slate-800/60">
+          <span class="text-slate-400">インデックス (Index)</span>
+          <span id="modalGlyphIndex" class="font-mono text-slate-200">36</span>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-slate-800/60">
+          <span class="text-slate-400">Advance Width</span>
+          <span id="modalGlyphAdvanceWidth" class="font-mono text-slate-200">1200</span>
+        </div>
+      </div>
+
+      <!-- Vector Preview Canvas -->
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">ベクターパス描画 (OpenType Canvas)</label>
+        <div class="bg-slate-950 rounded-xl p-2 border border-slate-800 flex justify-center">
+          <canvas id="glyphPathCanvas" width="160" height="160" class="bg-transparent"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // App State Management
+    const state = {
+      fonts: [],            // List of font objects: { id, name, file, fontFace, openTypeFont, objectUrl }
+      activeFontId: null,   // Currently selected font ID
+      fontSize: 32,
+      lineHeight: 1.4,
+      letterSpacing: 0,
+      textAlign: 'left',
+      textColor: '#f8fafc',
+      bgColor: '#020617',
+      presetKey: 'en_pangram_1',
+      customText: 'The quick brown fox jumps over the lazy dog.',
+      activeTab: 'preview'
+    };
+
+    // Text Presets Map
+    const PRESETS = {
+      ja_pangram_1: 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす',
+      ja_pangram_2: 'とりなくこえす ゆめ覚まし みよあけわたる ひんかしの そらあかねさし さひしきや やまとなでしこ さきにけり',
+      ja_sample_1: '吾輩は猫である。名前はまだ無い。どこで生れたかとんと見当がつかぬ。何でも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。',
+      en_pangram_1: 'The quick brown fox jumps over the lazy dog.',
+      numbers_symbols: '0 1 2 3 4 5 6 7 8 9 ! @ # $ % ^ & * ( ) _ + - = { } [ ] < > ?',
+      alphabet_upper: 'A B C D E F G H I J K L M N O P Q R S T U V W X Y Z',
+      alphabet_lower: 'a b c d e f g h i j k l m n o p q r s t u v w x y z'
+    };
+
+    // DOM Elements Cache
+    const fontInput = document.getElementById('fontInput');
+    const fontListContainer = document.getElementById('fontListContainer');
+    const fontCountBadge = document.getElementById('fontCountBadge');
+    const resetDemoBtn = document.getElementById('resetDemoBtn');
+    const dragDropOverlay = document.getElementById('dragDropOverlay');
+
+    const presetSelect = document.getElementById('presetSelect');
+    const customTextInput = document.getElementById('customTextInput');
+    const mainTextPreview = document.getElementById('mainTextPreview');
+    const previewCard = document.getElementById('previewCard');
+    const charCountDisplay = document.getElementById('charCountDisplay');
+    const currentFontNameDisplay = document.getElementById('currentFontNameDisplay');
+
+    const fontSizeSlider = document.getElementById('fontSizeSlider');
+    const fontSizeValue = document.getElementById('fontSizeValue');
+    const lineHeightSlider = document.getElementById('lineHeightSlider');
+    const lineHeightValue = document.getElementById('lineHeightValue');
+    const letterSpacingSlider = document.getElementById('letterSpacingSlider');
+    const letterSpacingValue = document.getElementById('letterSpacingValue');
+
+    const textColorPicker = document.getElementById('textColorPicker');
+    const bgColorPicker = document.getElementById('bgColorPicker');
+    const themeLightBtn = document.getElementById('themeLightBtn');
+    const themeDarkBtn = document.getElementById('themeDarkBtn');
+    const themeInvertBtn = document.getElementById('themeInvertBtn');
+
+    /**
+     * Generate unique ID
+     */
+    function generateId() {
+      return 'font_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    /**
+     * Initialize Application & Event Listeners
+     */
+    function init() {
+      // Event Listeners for Uploads
+      fontInput.addEventListener('change', handleFileInput);
+      
+      // Drag and Drop support
+      window.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dragDropOverlay.classList.remove('hidden');
+      });
+      dragDropOverlay.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dragDropOverlay.classList.add('hidden');
+      });
+      dragDropOverlay.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dragDropOverlay.classList.add('hidden');
+        if (e.dataTransfer.files.length > 0) {
+          processFiles(e.dataTransfer.files);
+        }
+      });
+
+      // Controls Events
+      presetSelect.addEventListener('change', (e) => {
+        state.presetKey = e.target.value;
+        const text = PRESETS[state.presetKey] || '';
+        state.customText = text;
+        customTextInput.value = text;
+        updatePreviewText();
+      });
+
+      customTextInput.value = state.customText;
+      customTextInput.addEventListener('input', (e) => {
+        state.customText = e.target.value;
+        updatePreviewText();
+      });
+
+      mainTextPreview.addEventListener('input', () => {
+        state.customText = mainTextPreview.innerText;
+        customTextInput.value = state.customText;
+        updateCharCount();
+      });
+
+      fontSizeSlider.addEventListener('input', (e) => {
+        state.fontSize = parseInt(e.target.value, 10);
+        fontSizeValue.textContent = `${state.fontSize}px`;
+        applyStyles();
+      });
+
+      lineHeightSlider.addEventListener('input', (e) => {
+        state.lineHeight = parseFloat(e.target.value);
+        lineHeightValue.textContent = state.lineHeight;
+        applyStyles();
+      });
+
+      letterSpacingSlider.addEventListener('input', (e) => {
+        state.letterSpacing = parseFloat(e.target.value);
+        letterSpacingValue.textContent = `${state.letterSpacing}px`;
+        applyStyles();
+      });
+
+      // Align buttons
+      document.querySelectorAll('.align-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.align-btn').forEach(b => {
+            b.classList.remove('bg-slate-800', 'text-slate-100');
+            b.classList.add('text-slate-400');
+          });
+          btn.classList.add('bg-slate-800', 'text-slate-100');
+          btn.classList.remove('text-slate-400');
+          state.textAlign = btn.dataset.align;
+          applyStyles();
+        });
+      });
+
+      // Colors & Themes
+      textColorPicker.addEventListener('input', (e) => {
+        state.textColor = e.target.value;
+        applyStyles();
+      });
+      bgColorPicker.addEventListener('input', (e) => {
+        state.bgColor = e.target.value;
+        applyStyles();
+      });
+
+      themeLightBtn.addEventListener('click', () => {
+        state.bgColor = '#ffffff';
+        state.textColor = '#0f172a';
+        bgColorPicker.value = state.bgColor;
+        textColorPicker.value = state.textColor;
+        applyStyles();
+      });
+
+      themeDarkBtn.addEventListener('click', () => {
+        state.bgColor = '#020617';
+        state.textColor = '#f8fafc';
+        bgColorPicker.value = state.bgColor;
+        textColorPicker.value = state.textColor;
+        applyStyles();
+      });
+
+      themeInvertBtn.addEventListener('click', () => {
+        const temp = state.bgColor;
+        state.bgColor = state.textColor;
+        state.textColor = temp;
+        bgColorPicker.value = state.bgColor;
+        textColorPicker.value = state.textColor;
+        applyStyles();
+      });
+
+      // Tab Switcher
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          switchTab(btn.dataset.tab);
+        });
+      });
+
+      // Reset Demo
+      resetDemoBtn.addEventListener('click', () => {
+        loadDefaultSystemFonts();
+      });
+
+      // Search Glyphs
+      document.getElementById('glyphSearchInput').addEventListener('input', filterGlyphs);
+
+      // Modal Close
+      document.getElementById('closeGlyphModalBtn').addEventListener('click', () => {
+        document.getElementById('glyphModal').classList.add('hidden');
+      });
+
+      // Copy CSS
+      document.getElementById('copyCssBtn').addEventListener('click', copyCssToClipboard);
+
+      // Compare Refresh
+      document.getElementById('compareRefreshBtn').addEventListener('click', renderCompareView);
+
+      // Initialize with default demo system font
+      loadDefaultSystemFonts();
+    }
+
+    /**
+     * Handle File Input Selection
+     */
+    function handleFileInput(e) {
+      if (e.target.files.length > 0) {
+        processFiles(e.target.files);
+      }
+    }
+
+    /**
+     * Process list of File objects
+     */
+    async function processFiles(files) {
+      for (const file of files) {
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!['ttf', 'otf', 'woff', 'woff2'].includes(ext)) {
+          continue;
+        }
+
+        try {
+          const fontId = generateId();
+          const fontName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9]/g, "_") + "_" + Date.now().toString().slice(-4);
+          const arrayBuffer = await file.arrayBuffer();
+          const blobUrl = URL.createObjectURL(file);
+
+          // 1. Create Browser FontFace
+          const fontFace = new FontFace(fontName, `url(${blobUrl})`);
+          await fontFace.load();
+          document.fonts.add(fontFace);
+
+          // 2. Parse using OpenType.js
+          let openTypeFont = null;
+          try {
+            openTypeFont = opentype.parse(arrayBuffer);
+          } catch (err) {
+            console.warn("OpenType.js parsing failed for extra features, CSS preview still active:", err);
+          }
+
+          const fontObj = {
+            id: fontId,
+            fontFamilyName: fontName,
+            originalName: file.name,
+            fileSize: (file.size / 1024).toFixed(1) + ' KB',
+            fontFace,
+            openTypeFont,
+            objectUrl: blobUrl
+          };
+
+          state.fonts.push(fontObj);
+          setActiveFont(fontId);
+
+        } catch (error) {
+          console.error("Failed to load font file:", file.name, error);
+        }
+      }
+
+      renderFontList();
+    }
+
+    /**
+     * Load default fallback system font
+     */
+    function loadDefaultSystemFonts() {
+      state.fonts = [];
+      const defaultFont = {
+        id: 'system_default',
+        fontFamilyName: 'Inter, sans-serif',
+        originalName: 'System Default (Inter / Noto Sans)',
+        fileSize: 'N/A',
+        fontFace: null,
+        openTypeFont: null,
+        objectUrl: null
+      };
+      state.fonts.push(defaultFont);
+      setActiveFont('system_default');
+      renderFontList();
+    }
+
+    /**
+     * Set active selected font ID
+     */
+    function setActiveFont(id) {
+      state.activeFontId = id;
+      const font = getActiveFont();
+      if (font) {
+        currentFontNameDisplay.textContent = font.originalName;
+      }
+      renderFontList();
+      applyStyles();
+      renderActiveTabContent();
+    }
+
+    function getActiveFont() {
+      return state.fonts.find(f => f.id === state.activeFontId) || state.fonts[0];
+    }
+
+    /**
+     * Render Left Sidebar Font List
+     */
+    function renderFontList() {
+      fontCountBadge.textContent = state.fonts.length;
+      fontListContainer.innerHTML = '';
+
+      state.fonts.forEach(font => {
+        const isActive = font.id === state.activeFontId;
+        const item = document.createElement('div');
+        item.className = `p-2.5 rounded-lg border text-xs cursor-pointer flex items-center justify-between transition-all ${
+          isActive 
+            ? 'bg-indigo-600/20 border-indigo-500/50 text-slate-100 font-semibold' 
+            : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+        }`;
+
+        item.innerHTML = `
+          <div class="truncate flex-1 mr-2" style="font-family: '${font.fontFamilyName}'">
+            <div class="truncate font-medium text-slate-200">${font.originalName}</div>
+            <div class="text-[10px] text-slate-500 font-mono">${font.fileSize}</div>
+          </div>
+          ${isActive ? '<i class="fa-solid fa-circle-check text-indigo-400 text-xs shrink-0"></i>' : ''}
+        `;
+
+        item.addEventListener('click', () => setActiveFont(font.id));
+        fontListContainer.appendChild(item);
+      });
+    }
+
+    /**
+     * Apply Typography & Styling Options
+     */
+    function applyStyles() {
+      const font = getActiveFont();
+      const fontFamily = font ? `'${font.fontFamilyName}'` : 'sans-serif';
+
+      mainTextPreview.style.fontFamily = fontFamily;
+      mainTextPreview.style.fontSize = `${state.fontSize}px`;
+      mainTextPreview.style.lineHeight = state.lineHeight;
+      mainTextPreview.style.letterSpacing = `${state.letterSpacing}px`;
+      mainTextPreview.style.textAlign = state.textAlign;
+
+      previewCard.style.backgroundColor = state.bgColor;
+      previewCard.style.color = state.textColor;
+
+      updateCharCount();
+    }
+
+    function updatePreviewText() {
+      mainTextPreview.innerText = state.customText;
+      updateCharCount();
+      if (state.activeTab === 'waterfall') renderWaterfallView();
+      if (state.activeTab === 'compare') renderCompareView();
+    }
+
+    function updateCharCount() {
+      charCountDisplay.textContent = `${mainTextPreview.innerText.length} 文字`;
+    }
+
+    /**
+     * Tab Switch Handler
+     */
+    function switchTab(tabKey) {
+      state.activeTab = tabKey;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        const isActive = btn.dataset.tab === tabKey;
+        btn.className = `tab-btn px-4 py-3 border-b-2 font-medium text-sm flex items-center gap-2 transition-all ${
+          isActive 
+            ? 'border-indigo-500 text-indigo-400' 
+            : 'border-transparent text-slate-400 hover:text-slate-200'
+        }`;
+      });
+
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+
+      const activeContent = document.getElementById(`tab-${tabKey}`);
+      if (activeContent) {
+        activeContent.classList.remove('hidden');
+      }
+
+      renderActiveTabContent();
+    }
+
+    function renderActiveTabContent() {
+      switch (state.activeTab) {
+        case 'preview':
+          applyStyles();
+          break;
+        case 'waterfall':
+          renderWaterfallView();
+          break;
+        case 'glyphs':
+          renderGlyphsView();
+          break;
+        case 'info':
+          renderMetadataView();
+          break;
+        case 'compare':
+          renderCompareView();
+          break;
+        case 'css':
+          renderCssView();
+          break;
+      }
+    }
+
+    /**
+     * Render Waterfall View
+     */
+    function renderWaterfallView() {
+      const container = document.getElementById('waterfallContainer');
+      container.innerHTML = '';
+
+      const font = getActiveFont();
+      const fontFamily = font ? `'${font.fontFamilyName}'` : 'sans-serif';
+      const text = state.customText || PRESETS.en_pangram_1;
+      const sizes = [12, 16, 20, 24, 32, 48, 64, 72];
+
+      sizes.forEach(size => {
+        const row = document.createElement('div');
+        row.className = 'pt-4 first:pt-0';
+        row.innerHTML = `
+          <div class="text-[11px] font-mono text-indigo-400 mb-1 flex items-center gap-2">
+            <span class="bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">${size}px</span>
+          </div>
+          <div class="break-words overflow-hidden" style="font-family: ${fontFamily}; font-size: ${size}px; line-height: 1.3; color: ${state.textColor};">
+            ${escapeHtml(text)}
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    /**
+     * Render Glyphs View
+     */
+    function renderGlyphsView() {
+      const font = getActiveFont();
+      const grid = document.getElementById('glyphGrid');
+      const badge = document.getElementById('glyphCountBadge');
+      const filteredBadge = document.getElementById('glyphFilteredCount');
+      grid.innerHTML = '';
+
+      if (!font || !font.openTypeFont) {
+        grid.innerHTML = `
+          <div class="col-span-full py-12 text-center text-slate-500 text-sm">
+            <i class="fa-solid fa-file-circle-exclamation text-3xl mb-2 text-slate-600 block"></i>
+            OpenType解析データがありません（TTF / OTF ファイルを直接アップロードしてください）
+          </div>
+        `;
+        badge.textContent = '0';
+        filteredBadge.textContent = '0';
+        return;
+      }
+
+      const otFont = font.openTypeFont;
+      const glyphs = otFont.glyphs.glyphs;
+      const glyphList = [];
+
+      for (let i = 0; i < otFont.numGlyphs; i++) {
+        const glyph = glyphs[i];
+        if (glyph && (glyph.unicode !== undefined || glyph.name)) {
+          const charStr = glyph.unicode ? String.fromCharCode(glyph.unicode) : '';
+          glyphList.push({
+            index: i,
+            glyph: glyph,
+            unicode: glyph.unicode,
+            unicodeHex: glyph.unicode ? 'U+' + glyph.unicode.toString(16).padStart(4, '0').toUpperCase() : 'N/A',
+            char: charStr,
+            name: glyph.name || `glyph_${i}`
+          });
+        }
+      }
+
+      badge.textContent = glyphList.length;
+      filteredBadge.textContent = glyphList.length;
+
+      // Store in window for filtering
+      window.currentGlyphList = glyphList;
+      renderFilteredGlyphs(glyphList);
+    }
+
+    function renderFilteredGlyphs(list) {
+      const grid = document.getElementById('glyphGrid');
+      const font = getActiveFont();
+      const fontFamily = font ? `'${font.fontFamilyName}'` : 'sans-serif';
+      grid.innerHTML = '';
+
+      const maxDisplay = 400; // Limit for UI performance
+      const slice = list.slice(0, maxDisplay);
+
+      slice.forEach(item => {
+        const box = document.createElement('button');
+        box.className = 'glyph-box bg-slate-900 border border-slate-800 hover:border-indigo-500/80 hover:bg-indigo-950/30 rounded-xl flex flex-col items-center justify-center p-1 transition-all group relative';
+        box.title = `${item.name} (${item.unicodeHex})`;
+
+        box.innerHTML = `
+          <span class="text-xl sm:text-2xl font-normal text-slate-200 group-hover:scale-110 transition-transform" style="font-family: ${fontFamily}">
+            ${item.char ? escapeHtml(item.char) : '<span class="text-xs text-slate-600 font-mono">?</span>'}
+          </span>
+          <span class="text-[9px] font-mono text-slate-500 mt-1 truncate max-w-full">${item.unicodeHex}</span>
+        `;
+
+        box.addEventListener('click', () => openGlyphModal(item));
+        grid.appendChild(box);
+      });
+
+      if (list.length > maxDisplay) {
+        const overflowNotice = document.createElement('div');
+        overflowNotice.className = 'col-span-full text-center text-xs text-slate-500 py-4';
+        overflowNotice.textContent = `...他 ${list.length - maxDisplay} 文字のグリフがあります（検索機能で絞り込めます）`;
+        grid.appendChild(overflowNotice);
+      }
+    }
+
+    function filterGlyphs() {
+      const query = document.getElementById('glyphSearchInput').value.trim().toLowerCase();
+      if (!window.currentGlyphList) return;
+
+      const filtered = window.currentGlyphList.filter(item => {
+        if (!query) return true;
+        return item.char.toLowerCase().includes(query) ||
+               item.unicodeHex.toLowerCase().includes(query) ||
+               item.name.toLowerCase().includes(query);
+      });
+
+      document.getElementById('glyphFilteredCount').textContent = filtered.length;
+      renderFilteredGlyphs(filtered);
+    }
+
+    /**
+     * Open Glyph Vector Inspection Modal
+     */
+    function openGlyphModal(item) {
+      const modal = document.getElementById('glyphModal');
+      const font = getActiveFont();
+      const fontFamily = font ? `'${font.fontFamilyName}'` : 'sans-serif';
+
+      document.getElementById('modalGlyphBox').style.fontFamily = fontFamily;
+      document.getElementById('modalGlyphBox').textContent = item.char || '?';
+      document.getElementById('modalGlyphChar').textContent = item.char ? `文字 '${item.char}'` : item.name;
+      document.getElementById('modalGlyphUnicode').textContent = `Unicode: ${item.unicodeHex}`;
+      document.getElementById('modalGlyphName').textContent = item.name;
+      document.getElementById('modalGlyphIndex').textContent = item.index;
+      document.getElementById('modalGlyphAdvanceWidth').textContent = item.glyph.advanceWidth || 'N/A';
+
+      // Draw Path on Canvas
+      const canvas = document.getElementById('glyphPathCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (font && font.openTypeFont && item.glyph) {
+        const x = 30;
+        const y = 120;
+        const fontSize = 100;
+        
+        ctx.fillStyle = '#818cf8';
+        const path = item.glyph.getPath(x, y, fontSize);
+        path.draw(ctx);
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    /**
+     * Render Font Metadata Information
+     */
+    function renderMetadataView() {
+      const font = getActiveFont();
+      
+      const elFamily = document.getElementById('infoFontFamily');
+      const elSubfamily = document.getElementById('infoFontSubfamily');
+      const elVersion = document.getElementById('infoVersion');
+      const elGlyphCount = document.getElementById('infoGlyphCount');
+      const elFileSize = document.getElementById('infoFileSize');
+
+      const elUnitsPerEm = document.getElementById('infoUnitsPerEm');
+      const elAscender = document.getElementById('infoAscender');
+      const elDescender = document.getElementById('infoDescender');
+      const elEmHeight = document.getElementById('infoEmHeight');
+
+      const tableBody = document.getElementById('infoMetadataTable');
+      tableBody.innerHTML = '';
+
+      if (!font || !font.openTypeFont) {
+        elFamily.textContent = font.originalName;
+        elSubfamily.textContent = 'Standard';
+        elVersion.textContent = '1.0';
+        elGlyphCount.textContent = 'N/A';
+        elFileSize.textContent = font.fileSize;
+
+        elUnitsPerEm.textContent = '1000';
+        elAscender.textContent = '800';
+        elDescender.textContent = '-200';
+        elEmHeight.textContent = '1000';
+
+        tableBody.innerHTML = `<tr><td colspan="2" class="py-4 text-center text-slate-500">メタデータ解析情報はありません</td></tr>`;
+        return;
+      }
+
+      const ot = font.openTypeFont;
+      const names = ot.names;
+
+      elFamily.textContent = getFontNameField(names, 'fontFamily') || font.originalName;
+      elSubfamily.textContent = getFontNameField(names, 'fontSubfamily') || 'Regular';
+      elVersion.textContent = getFontNameField(names, 'version') || 'N/A';
+      elGlyphCount.textContent = ot.numGlyphs || 'N/A';
+      elFileSize.textContent = font.fileSize;
+
+      elUnitsPerEm.textContent = ot.unitsPerEm || '1000';
+      elAscender.textContent = ot.ascender || 'N/A';
+      elDescender.textContent = ot.descender || 'N/A';
+      elEmHeight.textContent = (ot.ascender && ot.descender) ? (ot.ascender - ot.descender) : 'N/A';
+
+      // Build Name Table Rows
+      const nameKeys = [
+        { key: 'fontFamily', label: 'フォントファミリー名 (Font Family)' },
+        { key: 'fontSubfamily', label: 'サブファミリー名 (Subfamily / Style)' },
+        { key: 'uniqueID', label: '一意識別子 (Unique ID)' },
+        { key: 'fullName', label: 'フルネーム (Full Name)' },
+        { key: 'version', label: 'バージョン (Version)' },
+        { key: 'postScriptName', label: 'PostScript名' },
+        { key: 'designer', label: 'デザイナー (Designer)' },
+        { key: 'manufacturer', label: '制作会社 / 組織 (Manufacturer)' },
+        { key: 'description', label: '説明 (Description)' },
+        { key: 'license', label: 'ライセンス情報 (License)' },
+        { key: 'copyright', label: '著作権 (Copyright)' }
+      ];
+
+      nameKeys.forEach(({ key, label }) => {
+        const val = getFontNameField(names, key);
+        if (val) {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td class="py-2.5 px-3 text-slate-400 font-medium">${escapeHtml(label)}</td>
+            <td class="py-2.5 px-3 font-mono text-slate-200">${escapeHtml(val)}</td>
+          `;
+          tableBody.appendChild(row);
+        }
+      });
+    }
+
+    function getFontNameField(names, key) {
+      if (!names || !names[key]) return null;
+      const item = names[key];
+      if (typeof item === 'string') return item;
+      if (typeof item === 'object') {
+        return item.ja || item.en || Object.values(item)[0] || null;
+      }
+      return null;
+    }
+
+    /**
+     * Render Compare Mode
+     */
+    function renderCompareView() {
+      const container = document.getElementById('compareList');
+      container.innerHTML = '';
+
+      if (state.fonts.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs">フォントが読み込まれていません</div>`;
+        return;
+      }
+
+      state.fonts.forEach(font => {
+        const card = document.createElement('div');
+        card.className = 'bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-2';
+        card.innerHTML = `
+          <div class="flex justify-between items-center border-b border-slate-800/80 pb-2 text-xs">
+            <span class="font-bold text-indigo-400">${escapeHtml(font.originalName)}</span>
+            <span class="text-slate-500 font-mono">${font.fileSize}</span>
+          </div>
+          <div class="break-words py-2" style="font-family: '${font.fontFamilyName}'; font-size: ${state.fontSize}px; line-height: ${state.lineHeight}; letter-spacing: ${state.letterSpacing}px; color: ${state.textColor};">
+            ${escapeHtml(state.customText)}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    /**
+     * Render CSS `@font-face` Code Generator
+     */
+    function renderCssView() {
+      const font = getActiveFont();
+      const codeEl = document.getElementById('cssOutputCode');
+
+      if (!font) return;
+
+      const cssSnippet = `@font-face {
+  font-family: '${font.fontFamilyName}';
+  src: url('./fonts/${font.originalName}') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 使用例 */
+.custom-font-text {
+  font-family: '${font.fontFamilyName}', sans-serif;
+  font-size: ${state.fontSize}px;
+  line-height: ${state.lineHeight};
+  letter-spacing: ${state.letterSpacing}px;
+}`;
+
+      codeEl.textContent = cssSnippet;
+    }
+
+    /**
+     * Copy CSS snippet to clipboard
+     */
+    function copyCssToClipboard() {
+      const text = document.getElementById('cssOutputCode').textContent;
+      
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+
+      const btn = document.getElementById('copyCssBtn');
+      const origHtml = btn.innerHTML;
+      btn.innerHTML = `<i class="fa-solid fa-check"></i> コピー完了!`;
+      btn.classList.replace('bg-indigo-600', 'bg-emerald-600');
+
+      setTimeout(() => {
+        btn.innerHTML = origHtml;
+        btn.classList.replace('bg-emerald-600', 'bg-indigo-600');
+      }, 2000);
+    }
+
+    /**
+     * Helper: Escape HTML
+     */
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Launch Application
+    window.onload = function() {
+      init();
+    };
+  </script>
+</body>
+</html>
